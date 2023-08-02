@@ -107,3 +107,11 @@ lto = true
 opt-level = "z"
 debug = true
 codegen-units = 1
+
+
+
+[patch.crates-io]
+# num-bigint = { git = "https://github.com/kaidokert/fixed-bigint-rs", package = "fixed-bigint" }
+# num-bigint-dig = { git = "https://github.com/kaidokert/fixed-bigint-rs", package = "fixed-bigint" }
+num-bigint-dig = { path = "/Users/bradjc/git/fixed-bigint-rs" }
+# num-bigint_dig = { git = "https://github.com/kaidokert/fixed-bigint-rs", package = "fixed-bigint" }

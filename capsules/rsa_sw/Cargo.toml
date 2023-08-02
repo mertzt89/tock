@@ -12,3 +12,21 @@ edition.workspace = true
 kernel = { path = "../../kernel" }
 rsa = { version = "0.9.2", default-features = false, features = ["sha2"] }
 
+# [dependencies.rsa]
+# git = "https://github.com/kaidokert/fixed-bigint-rs"
+# package = "fixed-bigint"
+
+# [dependencies.num-bigint]
+# git = "https://github.com/kaidokert/fixed-bigint-rs"
+# package = "fixed-bigint"
+
+# [patch.num-bigint]
+# num-bigint = { git = "https://github.com/kaidokert/fixed-bigint-rs", package = "fixed-bigint" }
+
+# [patch.crates-io]
+# num-bigint = { git = "https://github.com/kaidokert/fixed-bigint-rs", package = "fixed-bigint" }
+
+
+
+
+#num-bigint-dig = { git = "https://github.com/kaidokert/fixed-bigint-rs" }
