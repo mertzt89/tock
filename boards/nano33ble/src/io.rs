@@ -4,6 +4,7 @@
 
 use core::fmt::Write;
 use core::panic::PanicInfo;
+use kernel::hil::led::Led;
 
 use cortexm4;
 use kernel::debug;
@@ -19,11 +20,9 @@ use crate::PROCESS_PRINTER;
 use kernel::hil::uart::Transmit;
 use kernel::utilities::cells::VolatileCell;
 
-struct Writer {
-    initialized: bool,
-}
+struct Writer {}
 
-static mut WRITER: Writer = Writer { initialized: false };
+static mut WRITER: Writer = Writer {};
 
 impl Write for Writer {
     fn write_str(&mut self, s: &str) -> ::core::fmt::Result {
@@ -51,9 +50,11 @@ impl uart::TransmitClient for DummyUsbClient {
 
 impl IoWrite for Writer {
     fn write(&mut self, buf: &[u8]) -> usize {
-        if !self.initialized {
-            self.initialized = true;
-        }
+        let led_kernel_pin = &nrf52840::gpio::GPIOPin::new(Pin::P0_13);
+        let led = &mut led::LedHigh::new(led_kernel_pin);
+        led.init();
+        led.off();
+
         // Here we mimic a synchronous UART output by calling transmit_buffer
         // on the CDC stack and then spinning on USB interrupts until the transaction
         // is complete. If the USB or CDC stack panicked, this may fail. It will also
@@ -99,19 +100,29 @@ impl IoWrite for Writer {
                 STATIC_PANIC_BUF[..max].copy_from_slice(&buf[..max]);
                 let static_buf = &mut STATIC_PANIC_BUF;
                 cdc.set_transmit_client(&DUMMY);
-                let _ = cdc.transmit_buffer(static_buf, max);
+                match cdc.transmit_buffer(static_buf, max) {
+                    Ok(()) => {}
+                    _ => {}
+                }
+                let mut interrupt_count = 0;
                 loop {
                     if let Some(interrupt) = cortexm4::nvic::next_pending() {
                         if interrupt == 39 {
+                            interrupt_count += 1;
+                            if interrupt_count >= 2 {
+                                led.on();
+                            }
                             usb.handle_interrupt();
                         }
                         let n = cortexm4::nvic::Nvic::new(interrupt);
                         n.clear_pending();
                         n.enable();
                     }
+
                     if DUMMY.fired.get() == true {
                         // buffer finished transmitting, return so we can output additional
                         // messages when requested by the panic handler.
+                        // led.on();
                         break;
                     }
                 }
@@ -129,16 +140,32 @@ impl IoWrite for Writer {
 #[no_mangle]
 #[panic_handler]
 pub unsafe extern "C" fn panic_fmt(pi: &PanicInfo) -> ! {
-    let led_kernel_pin = &nrf52840::gpio::GPIOPin::new(Pin::P0_13);
-    let led = &mut led::LedLow::new(led_kernel_pin);
+    // let led_kernel_pin = &nrf52840::gpio::GPIOPin::new(Pin::P0_13);
+    // let led = &mut led::LedHigh::new(led_kernel_pin);
+    // led.init();
+    // led.on();
+
+    // debug::panic_blink_forever(&mut [led])
+
+    // loop {}
     let writer = &mut WRITER;
-    debug::panic(
-        &mut [led],
+    debug::panic_print(
         writer,
         pi,
         &cortexm4::support::nop,
         &PROCESSES,
         &CHIP,
         &PROCESS_PRINTER,
-    )
+    );
+    loop {}
+    // let writer = &mut WRITER;
+    // debug::panic(
+    //     &mut [led],
+    //     writer,
+    //     pi,
+    //     &cortexm4::support::nop,
+    //     &PROCESSES,
+    //     &CHIP,
+    //     &PROCESS_PRINTER,
+    // )
 }
