@@ -232,6 +232,8 @@ impl<'a, P: gpio::InterruptPin<'a>> gpio::ClientWithValue for Button<'a, P> {
         let button_state = self.get_button_state(pin_num);
         let interrupt_count = Cell::new(0);
 
+        panic!("BUTTON PANIC");
+
         // schedule callback with the pin number and value
         self.apps.each(|_, cntr, upcalls| {
             if cntr.subscribe_map & (1 << pin_num) != 0 {

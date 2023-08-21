@@ -699,7 +699,8 @@ impl<'a, U: hil::usb::UsbController<'a>, A: 'a + Alarm<'a>> uart::Transmit<'a>
                 // a deferred callback to return the buffer immediately.
                 self.deferred_call_pending_droptx.set(true);
                 self.deferred_call.set();
-                Ok(())
+                // Ok(())
+                Err((ErrorCode::FAIL, self.tx_buffer.take().unwrap()))
             }
         }
     }

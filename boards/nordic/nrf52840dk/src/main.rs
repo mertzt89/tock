@@ -151,6 +151,14 @@ static mut PROCESSES: [Option<&'static dyn kernel::process::Process>; NUM_PROCS]
 static mut CHIP: Option<&'static nrf52840::chip::NRF52<Nrf52840DefaultPeripherals>> = None;
 static mut PROCESS_PRINTER: Option<&'static kernel::process::ProcessPrinterText> = None;
 
+static mut CDC_REF_FOR_PANIC: Option<
+    &'static capsules_extra::usb::cdc::CdcAcm<
+        'static,
+        nrf52840::usbd::Usbd,
+        capsules_core::virtualizers::virtual_alarm::VirtualMuxAlarm<'static, nrf52840::rtc::Rtc>,
+    >,
+> = None;
+
 /// Dummy buffer that causes the linker to reserve enough space for the stack.
 #[no_mangle]
 #[link_section = ".stack_buffer"]
@@ -165,12 +173,12 @@ pub struct Platform {
     >,
     ieee802154_radio: &'static capsules_extra::ieee802154::RadioDriver<'static>,
     button: &'static capsules_core::button::Button<'static, nrf52840::gpio::GPIOPin<'static>>,
-    pconsole: &'static capsules_core::process_console::ProcessConsole<
-        'static,
-        { capsules_core::process_console::DEFAULT_COMMAND_HISTORY_LEN },
-        VirtualMuxAlarm<'static, nrf52840::rtc::Rtc<'static>>,
-        components::process_console::Capability,
-    >,
+    // pconsole: &'static capsules_core::process_console::ProcessConsole<
+    //     'static,
+    //     { capsules_core::process_console::DEFAULT_COMMAND_HISTORY_LEN },
+    //     VirtualMuxAlarm<'static, nrf52840::rtc::Rtc<'static>>,
+    //     components::process_console::Capability,
+    // >,
     console: &'static capsules_core::console::Console<'static>,
     gpio: &'static capsules_core::gpio::GPIO<'static, nrf52840::gpio::GPIOPin<'static>>,
     led: &'static capsules_core::led::LedDriver<
@@ -330,7 +338,7 @@ pub unsafe fn main() {
         // rtt_memory. This aliases reference is only used inside a panic
         // handler, which should be OK, but maybe we should use a const
         // reference to rtt_memory and leverage interior mutability instead.
-        self::io::set_rtt_memory(&*rtt_memory_refs.get_rtt_memory_ptr());
+        // self::io::set_rtt_memory(&*rtt_memory_refs.get_rtt_memory_ptr());
 
         UartChannel::Rtt(rtt_memory_refs)
     } else {
@@ -464,10 +472,38 @@ pub unsafe fn main() {
     // UART & CONSOLE & DEBUG
     //--------------------------------------------------------------------------
 
+    let serial_number_buf = static_init!([u8; 17], [0; 17]);
+    let serial_number_string: &'static str =
+        nrf52840::ficr::FICR_INSTANCE.address_str(serial_number_buf);
+    let strings = static_init!(
+        [&str; 3],
+        [
+            "Arduino",              // Manufacturer
+            "Nano 33 BLE - TockOS", // Product
+            serial_number_string,   // Serial number
+        ]
+    );
+
+    let cdc = components::cdc::CdcAcmComponent::new(
+        &nrf52840_peripherals.usbd,
+        capsules_extra::usb::cdc::MAX_CTRL_PACKET_SIZE_NRF52840,
+        0x2341,
+        0x005a,
+        strings,
+        mux_alarm,
+        None,
+    )
+    .finalize(components::cdc_acm_component_static!(
+        nrf52840::usbd::Usbd,
+        nrf52840::rtc::Rtc
+    ));
+    CDC_REF_FOR_PANIC = Some(cdc); //for use by panic handler
+
     let uart_channel = nrf52_components::UartChannelComponent::new(
         uart_channel,
         mux_alarm,
         &base_peripherals.uarte0,
+        // cdc,
     )
     .finalize(nrf52_components::uart_channel_component_static!(
         nrf52840::rtc::Rtc
@@ -479,6 +515,7 @@ pub unsafe fn main() {
     PROCESS_PRINTER = Some(process_printer);
 
     // Virtualize the UART channel for the console and for kernel debug.
+    // let uart_mux = components::console::UartMuxComponent::new(cdc, 115200)
     let uart_mux = components::console::UartMuxComponent::new(uart_channel, 115200)
         .finalize(components::uart_mux_component_static!());
 
@@ -800,6 +837,10 @@ pub unsafe fn main() {
     // keyboard_hid.enable();
     // keyboard_hid.attach();
 
+    // Configure the USB stack to enable a serial port over CDC-ACM.
+    cdc.enable();
+    cdc.attach();
+
     //--------------------------------------------------------------------------
     // PLATFORM SETUP, SCHEDULER, AND START KERNEL LOOP
     //--------------------------------------------------------------------------
@@ -811,7 +852,7 @@ pub unsafe fn main() {
         button,
         ble_radio,
         ieee802154_radio,
-        pconsole,
+        // pconsole,
         console,
         led,
         gpio,
@@ -833,15 +874,15 @@ pub unsafe fn main() {
         systick: cortexm4::systick::SysTick::new_with_calibration(64000000),
     };
 
-    let _ = platform.pconsole.start();
+    let _ = pconsole.start();
     base_peripherals.adc.calibrate();
 
     // test::aes_test::run_aes128_ctr(&base_peripherals.ecb);
     // test::aes_test::run_aes128_cbc(&base_peripherals.ecb);
     // test::aes_test::run_aes128_ecb(&base_peripherals.ecb);
 
-    debug!("Initialization complete. Entering main loop\r");
-    debug!("{}", &nrf52840::ficr::FICR_INSTANCE);
+    // debug!("Initialization complete. Entering main loop\r");
+    // debug!("{}", &nrf52840::ficr::FICR_INSTANCE);
 
     // alarm_test_component.run();
 

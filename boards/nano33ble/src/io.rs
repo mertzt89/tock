@@ -86,47 +86,52 @@ impl IoWrite for Writer {
             // and not much we can do. Don't want to double fault,
             // so just return.
             super::CDC_REF_FOR_PANIC.map(|cdc| {
-                // Lots of unsafe dereferencing of global static mut objects here.
-                // However, this should be okay, because it all happens within
-                // a single thread, and:
-                // - This is the only place the global CDC_REF_FOR_PANIC is used, the logic is the same
-                //   as applies for the global CHIP variable used in the panic handler.
-                // - We do create multiple mutable references to the STATIC_PANIC_BUF, but we never
-                //   access the STATIC_PANIC_BUF after a slice of it is passed to transmit_buffer
-                //   until the slice has been returned in the uart callback.
-                // - Similarly, only this function uses the global DUMMY variable, and we do not
-                //   mutate it.
-                let usb = &mut cdc.controller();
-                STATIC_PANIC_BUF[..max].copy_from_slice(&buf[..max]);
-                let static_buf = &mut STATIC_PANIC_BUF;
-                cdc.set_transmit_client(&DUMMY);
-                match cdc.transmit_buffer(static_buf, max) {
-                    Ok(()) => {}
-                    _ => {}
-                }
-                let mut interrupt_count = 0;
-                loop {
-                    if let Some(interrupt) = cortexm4::nvic::next_pending() {
-                        if interrupt == 39 {
-                            interrupt_count += 1;
-                            if interrupt_count >= 2 {
+                super::NRF52_RTC.map(|rtc| {
+                    // Lots of unsafe dereferencing of global static mut objects here.
+                    // However, this should be okay, because it all happens within
+                    // a single thread, and:
+                    // - This is the only place the global CDC_REF_FOR_PANIC is used, the logic is the same
+                    //   as applies for the global CHIP variable used in the panic handler.
+                    // - We do create multiple mutable references to the STATIC_PANIC_BUF, but we never
+                    //   access the STATIC_PANIC_BUF after a slice of it is passed to transmit_buffer
+                    //   until the slice has been returned in the uart callback.
+                    // - Similarly, only this function uses the global DUMMY variable, and we do not
+                    //   mutate it.
+                    let usb = &mut cdc.controller();
+                    STATIC_PANIC_BUF[..max].copy_from_slice(&buf[..max]);
+                    let static_buf = &mut STATIC_PANIC_BUF;
+                    cdc.set_transmit_client(&DUMMY);
+                    match cdc.transmit_buffer(static_buf, max) {
+                        Ok(()) => {}
+                        _ => {}
+                    }
+                    let mut interrupt_count = 0;
+                    loop {
+                        if let Some(interrupt) = cortexm4::nvic::next_pending() {
+                            if interrupt == 39 {
+                                interrupt_count += 1;
+                                if interrupt_count >= 2 {}
                                 led.on();
+                                usb.handle_interrupt();
+                            // } else if interrupt < 25 {
+                            } else {
+                                // led.on();
+                                // rtc.handle_interrupt();
                             }
-                            usb.handle_interrupt();
+                            let n = cortexm4::nvic::Nvic::new(interrupt);
+                            n.clear_pending();
+                            n.enable();
                         }
-                        let n = cortexm4::nvic::Nvic::new(interrupt);
-                        n.clear_pending();
-                        n.enable();
-                    }
 
-                    if DUMMY.fired.get() == true {
-                        // buffer finished transmitting, return so we can output additional
-                        // messages when requested by the panic handler.
-                        // led.on();
-                        break;
+                        if DUMMY.fired.get() == true {
+                            // buffer finished transmitting, return so we can output additional
+                            // messages when requested by the panic handler.
+                            // led.on();
+                            break;
+                        }
                     }
-                }
-                DUMMY.fired.set(false);
+                    DUMMY.fired.set(false);
+                });
             });
         }
         buf.len()
@@ -146,6 +151,12 @@ pub unsafe extern "C" fn panic_fmt(pi: &PanicInfo) -> ! {
     // led.on();
 
     // debug::panic_blink_forever(&mut [led])
+
+    cortexm4::nvic::disable_all();
+    cortexm4::nvic::clear_all_pending();
+
+    let n = cortexm4::nvic::Nvic::new(39);
+    n.enable();
 
     // loop {}
     let writer = &mut WRITER;

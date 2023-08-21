@@ -100,6 +100,7 @@ static mut CDC_REF_FOR_PANIC: Option<
     >,
 > = None;
 static mut NRF52_POWER: Option<&'static nrf52840::power::Power> = None;
+static mut NRF52_RTC: Option<&'static nrf52840::rtc::Rtc> = None;
 
 /// Dummy buffer that causes the linker to reserve enough space for the stack.
 #[no_mangle]
@@ -246,6 +247,7 @@ pub unsafe fn start() -> (
     // Save a reference to the power module for resetting the board into the
     // bootloader.
     NRF52_POWER = Some(&base_peripherals.pwr_clk);
+    NRF52_RTC = Some(&base_peripherals.rtc);
 
     let board_kernel = static_init!(kernel::Kernel, kernel::Kernel::new(&PROCESSES));
 
