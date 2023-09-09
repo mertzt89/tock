@@ -247,6 +247,18 @@ pub struct Platform {
         >,
     >,
     kv_driver: &'static KVDriver,
+    hmac: &'static capsules_extra::hmac::HmacDriver<
+        'static,
+        capsules_extra::hmac_sha256::HmacSha256Software<
+            'static,
+            capsules_extra::sha256::Sha256Software<'static>,
+        >,
+        32,
+    >,
+    oracle: &'static capsules_extra::tutorials::encryption_oracle_chkpt5::EncryptionOracleDriver<
+        'static,
+        nrf52840::aes::AesECB<'static>,
+    >,
     scheduler: &'static RoundRobinSched<'static>,
     systick: cortexm4::systick::SysTick,
 }
@@ -274,7 +286,9 @@ impl SyscallDriverLookup for Platform {
             capsules_core::i2c_master_slave_driver::DRIVER_NUM => f(Some(self.i2c_master_slave)),
             capsules_core::spi_controller::DRIVER_NUM => f(Some(self.spi_controller)),
             capsules_extra::net::thread::driver::DRIVER_NUM => f(Some(self.thread_driver)),
+            capsules_extra::hmac::DRIVER_NUM => f(Some(self.hmac)),
             capsules_extra::kv_driver::DRIVER_NUM => f(Some(self.kv_driver)),
+            0x99999 => f(Some(self.oracle)),
             _ => f(None),
         }
     }
@@ -738,6 +752,27 @@ pub unsafe fn start() -> (
     ));
 
     //--------------------------------------------------------------------------
+    // HMAC-SHA256
+    //--------------------------------------------------------------------------
+
+    let sha256_sw = components::sha::ShaSoftware256Component::new()
+        .finalize(components::sha_software_256_component_static!());
+
+    let hmac_sha256_sw = components::hmac::HmacSha256SoftwareComponent::new(sha256_sw).finalize(
+        components::hmac_sha256_software_component_static!(capsules_extra::sha256::Sha256Software),
+    );
+
+    let hmac = components::hmac::HmacComponent::new(
+        board_kernel,
+        capsules_extra::hmac::DRIVER_NUM,
+        hmac_sha256_sw,
+    )
+    .finalize(components::hmac_component_static!(
+        capsules_extra::hmac_sha256::HmacSha256Software<capsules_extra::sha256::Sha256Software>,
+        32
+    ));
+
+    //--------------------------------------------------------------------------
     // TICKV
     //--------------------------------------------------------------------------
 
@@ -890,6 +925,35 @@ pub unsafe fn start() -> (
     // keyboard_hid.attach();
 
     //--------------------------------------------------------------------------
+    // AES ORACLE
+    //--------------------------------------------------------------------------
+
+    const CRYPT_SIZE: usize = 7 * kernel::hil::symmetric_encryption::AES128_BLOCK_SIZE;
+    let aes_src_buffer = kernel::static_init!([u8; 16], [0; 16]);
+    let aes_dst_buffer = kernel::static_init!([u8; CRYPT_SIZE], [0; CRYPT_SIZE]);
+
+    let oracle = static_init!(
+        capsules_extra::tutorials::encryption_oracle_chkpt5::EncryptionOracleDriver<
+            'static,
+            nrf52840::aes::AesECB<'static>,
+        >,
+        // Call our constructor:
+        capsules_extra::tutorials::encryption_oracle_chkpt5::EncryptionOracleDriver::new(
+            &base_peripherals.ecb,
+            aes_src_buffer,
+            aes_dst_buffer,
+            // Magic incantation to create our `Grant` struct:
+            board_kernel.create_grant(
+                0x99999, // our driver number
+                &create_capability!(capabilities::MemoryAllocationCapability)
+            ),
+        ),
+    );
+
+    // Leave commented out for now:
+    kernel::hil::symmetric_encryption::AES128::set_client(&base_peripherals.ecb, oracle);
+
+    //--------------------------------------------------------------------------
     // PLATFORM SETUP, SCHEDULER, AND START KERNEL LOOP
     //--------------------------------------------------------------------------
 
@@ -919,6 +983,8 @@ pub unsafe fn start() -> (
         ),
         i2c_master_slave,
         spi_controller,
+        hmac,
+        oracle,
         kv_driver,
         scheduler,
         systick: cortexm4::systick::SysTick::new_with_calibration(64000000),
