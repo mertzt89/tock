@@ -13,7 +13,7 @@ use crate::ErrorCode;
 /// when data has been added to a digest.
 ///
 /// 'L' is the length of the 'u8' array to store the digest output.
-pub trait ClientData<const L: usize> {
+pub trait Client<const L: usize> {
     /// Called when the data has been added to the digest. `data` is
     /// the `SubSlice` passed in the call to `add_data`, whose
     /// active slice contains the data that was not added. On `Ok`,
@@ -43,13 +43,7 @@ pub trait ClientData<const L: usize> {
     ///  - CANCEL: the operation was cancelled by a call to `clear_data`.
     ///  - FAIL: an internal failure.
     fn add_mut_data_done(&self, result: Result<(), ErrorCode>, data: SubSliceMut<'static, u8>);
-}
 
-/// Implement this trait and use `set_client()` in order to receive callbacks when
-/// a digest is completed.
-///
-/// 'L' is the length of the 'u8' array to store the digest output.
-pub trait ClientHash<const L: usize> {
     /// Called when a digest is computed. `digest` is the same
     /// reference passed to `run()` to store the hash value. If
     /// `result` is `Ok`, `digest` stores the computed hash. If
@@ -65,13 +59,7 @@ pub trait ClientHash<const L: usize> {
     ///  or one was not requested.
     ///  - FAIL: an internal failure.
     fn hash_done(&self, result: Result<(), ErrorCode>, digest: &'static mut [u8; L]);
-}
 
-/// Implement this trait and use `set_client()` in order to receive callbacks when
-/// digest verification is complete.
-///
-/// 'L' is the length of the 'u8' array to store the digest output.
-pub trait ClientVerify<const L: usize> {
     /// Called when a verification is computed.  `compare` is the
     /// reference supplied to `verify()` and the data stored in
     /// `compare` is unchanged.  On `Ok` the `bool` indicates if the
@@ -89,16 +77,6 @@ pub trait ClientVerify<const L: usize> {
     fn verification_done(&self, result: Result<bool, ErrorCode>, compare: &'static mut [u8; L]);
 }
 
-pub trait Client<const L: usize>: ClientData<L> + ClientHash<L> + ClientVerify<L> {}
-
-impl<T: ClientData<L> + ClientHash<L> + ClientVerify<L>, const L: usize> Client<L> for T {}
-
-pub trait ClientDataHash<const L: usize>: ClientData<L> + ClientHash<L> {}
-impl<T: ClientData<L> + ClientHash<L>, const L: usize> ClientDataHash<L> for T {}
-
-pub trait ClientDataVerify<const L: usize>: ClientData<L> + ClientVerify<L> {}
-impl<T: ClientData<L> + ClientVerify<L>, const L: usize> ClientDataVerify<L> for T {}
-
 /// Adding data (mutable or immutable) to a digest. There are two
 /// separate methods, `add_data` for immutable data (e.g., flash) and
 /// `add_mut_data` for mutable data (e.g., RAM). Each has its own
@@ -108,7 +86,7 @@ impl<T: ClientData<L> + ClientVerify<L>, const L: usize> ClientDataVerify<L> for
 pub trait DigestData<'a, const L: usize> {
     /// Set the client instance which will handle the `add_data_done`
     /// and `add_mut_data_done` callbacks.
-    fn set_data_client(&'a self, client: &'a dyn ClientData<L>);
+    fn set_client(&'a self, client: &'a dyn Client<L>);
 
     /// Add data to the input of the hash function/digest. `Ok`
     /// indicates all of the active bytes in `data` will be added.
@@ -160,7 +138,7 @@ pub trait DigestData<'a, const L: usize> {
 pub trait DigestHash<'a, const L: usize> {
     /// Set the client instance which will receive the `hash_done()`
     /// callback.
-    fn set_hash_client(&'a self, client: &'a dyn ClientHash<L>);
+    fn set_client(&'a self, client: &'a dyn Client<L>);
 
     /// Compute a digest of all of the data added with `add_data` and
     /// `add_data_mut`, storing the computed value in `digest`.  The
@@ -192,7 +170,7 @@ pub trait DigestHash<'a, const L: usize> {
 pub trait DigestVerify<'a, const L: usize> {
     /// Set the client instance which will receive the `verification_done()`
     /// callback.
-    fn set_verify_client(&'a self, client: &'a dyn ClientVerify<L>);
+    fn set_client(&'a self, client: &'a dyn Client<L>);
 
     /// Compute a digest of all of the data added with `add_data` and
     /// `add_data_mut` then compare it with value in `compare`.  The
@@ -226,28 +204,17 @@ pub trait DigestVerify<'a, const L: usize> {
 pub trait Digest<'a, const L: usize>:
     DigestData<'a, L> + DigestHash<'a, L> + DigestVerify<'a, L>
 {
-    /// Set the client instance which will receive `hash_done()`,
-    /// `add_data_done()` and `verification_done()` callbacks.
-    fn set_client(&'a self, client: &'a dyn Client<L>);
 }
 
 /// Computes a digest (cryptographic hash) over data.
 ///
 /// 'L' is the length of the 'u8' array to store the digest output.
-pub trait DigestDataHash<'a, const L: usize>: DigestData<'a, L> + DigestHash<'a, L> {
-    /// Set the client instance which will receive `hash_done()` and
-    /// `add_data_done()` callbacks.
-    fn set_client(&'a self, client: &'a dyn ClientDataHash<L>);
-}
+pub trait DigestDataHash<'a, const L: usize>: DigestData<'a, L> + DigestHash<'a, L> {}
 
 /// Verify a digest (cryptographic hash) over data.
 ///
 /// 'L' is the length of the 'u8' array to store the digest output.
-pub trait DigestDataVerify<'a, const L: usize>: DigestData<'a, L> + DigestVerify<'a, L> {
-    /// Set the client instance which will receive `verify_done()` and
-    /// `add_data_done()` callbacks.
-    fn set_client(&'a self, client: &'a dyn ClientDataVerify<L>);
-}
+pub trait DigestDataVerify<'a, const L: usize>: DigestData<'a, L> + DigestVerify<'a, L> {}
 
 pub trait Sha224 {
     /// Call before adding data to perform Sha224
