@@ -7,7 +7,7 @@
 use core::cell::Cell;
 use core::ops::Index;
 use kernel::hil;
-use kernel::hil::digest::{self, DigestData, DigestHash};
+use kernel::hil::digest::{self, Digest, DigestData, DigestHash};
 use kernel::utilities::cells::OptionalCell;
 use kernel::utilities::leasable_buffer::SubSlice;
 use kernel::utilities::leasable_buffer::SubSliceMut;
@@ -320,8 +320,8 @@ impl<'a> hil::digest::DigestData<'a, 32> for Hmac<'a> {
         self.cancelled.set(true);
     }
 
-    fn set_data_client(&'a self, _client: &'a (dyn digest::ClientData<32> + 'a)) {
-        unimplemented!()
+    fn set_client(&'a self, client: &'a dyn digest::Client<32>) {
+        self.client.set(client);
     }
 }
 
@@ -346,8 +346,8 @@ impl<'a> hil::digest::DigestHash<'a, 32> for Hmac<'a> {
         Ok(())
     }
 
-    fn set_hash_client(&'a self, _client: &'a (dyn digest::ClientHash<32> + 'a)) {
-        unimplemented!()
+    fn set_client(&'a self, client: &'a dyn digest::Client<32>) {
+        self.client.set(client);
     }
 }
 
@@ -361,16 +361,12 @@ impl<'a> hil::digest::DigestVerify<'a, 32> for Hmac<'a> {
         self.run(compare)
     }
 
-    fn set_verify_client(&'a self, _client: &'a (dyn digest::ClientVerify<32> + 'a)) {
-        unimplemented!()
-    }
-}
-
-impl<'a> hil::digest::Digest<'a, 32> for Hmac<'a> {
     fn set_client(&'a self, client: &'a dyn digest::Client<32>) {
         self.client.set(client);
     }
 }
+
+impl<'a> Digest<'a, 32> for Hmac<'a> {}
 
 impl hil::digest::HmacSha256 for Hmac<'_> {
     fn set_mode_hmacsha256(&self, key: &[u8]) -> Result<(), ErrorCode> {

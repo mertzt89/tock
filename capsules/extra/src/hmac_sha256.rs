@@ -66,10 +66,6 @@ pub struct HmacSha256Software<'a, S: hil::digest::Sha256 + hil::digest::DigestDa
     /// swap them back and compare:
     verify_buffer: MapCell<&'static mut [u8; 32]>,
     /// Clients for callbacks.
-    // error[E0658]: cannot cast `dyn kernel::hil::digest::Client<32>` to `dyn ClientData<32>`, trait upcasting coercion is experimental
-    // data_client: OptionalCell<&'a dyn hil::digest::ClientData<SHA_256_OUTPUT_LEN_BYTES>>,
-    // hash_client: OptionalCell<&'a dyn hil::digest::ClientHash<SHA_256_OUTPUT_LEN_BYTES>>,
-    // verify_client: OptionalCell<&'a dyn hil::digest::ClientVerify<SHA_256_OUTPUT_LEN_BYTES>>,
     client: OptionalCell<&'a dyn hil::digest::Client<SHA_256_OUTPUT_LEN_BYTES>>,
 }
 
@@ -88,9 +84,6 @@ impl<'a, S: hil::digest::Sha256 + hil::digest::DigestDataHash<'a, 32>> HmacSha25
             key_buffer: MapCell::new([0; SHA_BLOCK_LEN_BYTES]),
             digest_buffer: MapCell::empty(),
             verify_buffer: MapCell::new(verify_buffer),
-            // data_client: OptionalCell::empty(),
-            // hash_client: OptionalCell::empty(),
-            // verify_client: OptionalCell::empty(),
             client: OptionalCell::empty(),
         }
     }
@@ -220,9 +213,8 @@ impl<'a, S: hil::digest::Sha256 + hil::digest::DigestDataHash<'a, 32>>
         self.sha256.clear_data();
     }
 
-    fn set_data_client(&'a self, _client: &'a dyn hil::digest::ClientData<32>) {
-        // self.data_client.set(client);
-        unimplemented!()
+    fn set_client(&'a self, client: &'a dyn hil::digest::Client<32>) {
+        self.client.set(client);
     }
 }
 
@@ -239,9 +231,8 @@ impl<'a, S: hil::digest::Sha256 + hil::digest::DigestDataHash<'a, 32>>
         self.sha256.run(digest)
     }
 
-    fn set_hash_client(&'a self, _client: &'a dyn hil::digest::ClientHash<32>) {
-        // self.hash_client.set(client);
-        unimplemented!()
+    fn set_client(&'a self, client: &'a dyn hil::digest::Client<32>) {
+        self.client.set(client);
     }
 }
 
@@ -262,34 +253,12 @@ impl<'a, S: hil::digest::Sha256 + hil::digest::DigestDataHash<'a, 32>>
         self.sha256.run(digest)
     }
 
-    fn set_verify_client(&'a self, _client: &'a dyn hil::digest::ClientVerify<32>) {
-        // self.verify_client.set(client);
-        unimplemented!()
-    }
-}
-
-impl<'a, S: hil::digest::Sha256 + hil::digest::DigestDataHash<'a, 32>>
-    hil::digest::DigestDataHash<'a, 32> for HmacSha256Software<'a, S>
-{
-    fn set_client(&'a self, _client: &'a dyn hil::digest::ClientDataHash<32>) {
-        // self.data_client.set(client);
-        // self.hash_client.set(client);
-        unimplemented!()
-    }
-}
-
-impl<'a, S: hil::digest::Sha256 + hil::digest::DigestDataHash<'a, 32>> hil::digest::Digest<'a, 32>
-    for HmacSha256Software<'a, S>
-{
     fn set_client(&'a self, client: &'a dyn hil::digest::Client<32>) {
-        // self.data_client.set(client);
-        // self.hash_client.set(client);
-        // self.verify_client.set(client);
         self.client.set(client);
     }
 }
 
-impl<'a, S: hil::digest::Sha256 + hil::digest::DigestDataHash<'a, 32>> hil::digest::ClientData<32>
+impl<'a, S: hil::digest::Sha256 + hil::digest::DigestDataHash<'a, 32>> hil::digest::Client<32>
     for HmacSha256Software<'a, S>
 {
     fn add_data_done(&self, result: Result<(), ErrorCode>, data: SubSlice<'static, u8>) {
@@ -403,11 +372,7 @@ impl<'a, S: hil::digest::Sha256 + hil::digest::DigestDataHash<'a, 32>> hil::dige
             }
         }
     }
-}
 
-impl<'a, S: hil::digest::Sha256 + hil::digest::DigestDataHash<'a, 32>> hil::digest::ClientHash<32>
-    for HmacSha256Software<'a, S>
-{
     fn hash_done(&self, result: Result<(), ErrorCode>, digest: &'static mut [u8; 32]) {
         let hash_done_error = |error: Result<(), ErrorCode>,
                                error_digest: &'static mut [u8; 32]| {
@@ -493,11 +458,7 @@ impl<'a, S: hil::digest::Sha256 + hil::digest::DigestDataHash<'a, 32>> hil::dige
             }
         }
     }
-}
 
-impl<'a, S: hil::digest::Sha256 + hil::digest::DigestDataHash<'a, 32>> hil::digest::ClientVerify<32>
-    for HmacSha256Software<'a, S>
-{
     fn verification_done(&self, _result: Result<bool, ErrorCode>, _compare: &'static mut [u8; 32]) {
     }
 }

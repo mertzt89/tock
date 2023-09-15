@@ -249,7 +249,7 @@ impl<
         'a,
         H: digest::Digest<'a, L> + digest::HmacSha256 + digest::HmacSha384 + digest::HmacSha512,
         const L: usize,
-    > digest::ClientData<L> for HmacDriver<'a, H, L>
+    > digest::Client<L> for HmacDriver<'a, H, L>
 {
     // Because data needs to be copied from a userspace buffer into a kernel (RAM) one,
     // we always pass mut data; this callback should never be invoked.
@@ -380,14 +380,7 @@ impl<
 
         self.check_queue();
     }
-}
 
-impl<
-        'a,
-        H: digest::Digest<'a, L> + digest::HmacSha256 + digest::HmacSha384 + digest::HmacSha512,
-        const L: usize,
-    > digest::ClientHash<L> for HmacDriver<'a, H, L>
-{
     fn hash_done(&self, result: Result<(), ErrorCode>, digest: &'static mut [u8; L]) {
         self.processid.map(|id| {
             self.apps
@@ -432,14 +425,7 @@ impl<
         self.check_queue();
         self.dest_buffer.replace(digest);
     }
-}
 
-impl<
-        'a,
-        H: digest::Digest<'a, L> + digest::HmacSha256 + digest::HmacSha384 + digest::HmacSha512,
-        const L: usize,
-    > digest::ClientVerify<L> for HmacDriver<'a, H, L>
-{
     fn verification_done(&self, result: Result<bool, ErrorCode>, compare: &'static mut [u8; L]) {
         self.processid.map(|id| {
             self.apps

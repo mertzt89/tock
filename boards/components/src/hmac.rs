@@ -85,7 +85,7 @@ impl<
             self.board_kernel.create_grant(self.driver_num, &grant_cap),
         ));
 
-        self.hmac.set_client(hmac);
+        kernel::hil::digest::DigestData::set_client(self.hmac, hmac);
 
         hmac
     }
@@ -143,7 +143,7 @@ impl<
                 verify_buffer,
             ));
 
-        kernel::hil::digest::Digest::set_client(self.sha_256, hmac_sha256_sw);
+        kernel::hil::digest::DigestData::set_client(self.sha_256, hmac_sha256_sw);
 
         hmac_sha256_sw
     }

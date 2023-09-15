@@ -93,7 +93,7 @@ impl<
             self.board_kernel.create_grant(self.driver_num, &grant_cap),
         ));
 
-        self.sha.set_client(sha);
+        digest::DigestData::set_client(self.sha, sha);
 
         sha
     }

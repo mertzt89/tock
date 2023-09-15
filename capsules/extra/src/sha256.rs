@@ -12,10 +12,9 @@
 use core::cell::Cell;
 use kernel::deferred_call::{DeferredCall, DeferredCallClient};
 
+use kernel::hil::digest::Client;
 use kernel::hil::digest::Sha256;
-use kernel::hil::digest::{Client, ClientData, ClientHash, ClientVerify};
-use kernel::hil::digest::{ClientDataHash, ClientDataVerify, DigestDataHash, DigestDataVerify};
-use kernel::hil::digest::{Digest, DigestData, DigestHash, DigestVerify};
+use kernel::hil::digest::{DigestData, DigestDataHash, DigestDataVerify, DigestHash, DigestVerify};
 use kernel::utilities::cells::{MapCell, OptionalCell};
 use kernel::utilities::leasable_buffer::SubSlice;
 use kernel::utilities::leasable_buffer::SubSliceMut;
@@ -331,8 +330,8 @@ impl<'a> DigestData<'a, 32> for Sha256Software<'a> {
         self.initialize();
     }
 
-    fn set_data_client(&'a self, _client: &'a (dyn ClientData<32> + 'a)) {
-        unimplemented!()
+    fn set_client(&'a self, client: &'a dyn Client<32>) {
+        self.client.set(client);
     }
 }
 
@@ -358,9 +357,8 @@ impl<'a> DigestHash<'a, 32> for Sha256Software<'a> {
             Ok(())
         }
     }
-
-    fn set_hash_client(&'a self, _client: &'a (dyn ClientHash<32> + 'a)) {
-        unimplemented!()
+    fn set_client(&'a self, client: &'a dyn Client<32>) {
+        self.client.set(client);
     }
 }
 
@@ -380,12 +378,6 @@ impl<'a> DigestVerify<'a, 32> for Sha256Software<'a> {
         }
     }
 
-    fn set_verify_client(&'a self, _client: &'a (dyn ClientVerify<32> + 'a)) {
-        unimplemented!()
-    }
-}
-
-impl<'a> Digest<'a, 32> for Sha256Software<'a> {
     fn set_client(&'a self, client: &'a dyn Client<32>) {
         self.client.set(client);
     }
@@ -486,21 +478,12 @@ impl<'a> DeferredCallClient for Sha256Software<'a> {
     }
 }
 
+impl<'a> DigestDataHash<'a, 32> for Sha256Software<'a> {}
+impl<'a> DigestDataVerify<'a, 32> for Sha256Software<'a> {}
+
 impl Sha256 for Sha256Software<'_> {
     /// Call before adding data to perform Sha256
     fn set_mode_sha256(&self) -> Result<(), ErrorCode> {
         Ok(())
-    }
-}
-
-impl<'a> DigestDataHash<'a, 32> for Sha256Software<'a> {
-    fn set_client(&'a self, _client: &'a dyn ClientDataHash<32>) {
-        unimplemented!()
-    }
-}
-
-impl<'a> DigestDataVerify<'a, 32> for Sha256Software<'a> {
-    fn set_client(&'a self, _client: &'a dyn ClientDataVerify<32>) {
-        unimplemented!()
     }
 }

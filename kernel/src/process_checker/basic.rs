@@ -7,8 +7,7 @@
 //| the [AppID TRD](../../doc/reference/trd-appid.md).
 
 use crate::deferred_call::{DeferredCall, DeferredCallClient};
-use crate::hil::digest::{ClientData, ClientHash, ClientVerify};
-use crate::hil::digest::{DigestDataVerify, Sha256};
+use crate::hil::digest::{self, DigestDataVerify, Sha256};
 use crate::process::{Process, ShortID};
 use crate::process_checker::{AppCredentialsChecker, AppUniqueness};
 use crate::process_checker::{CheckResult, Client, Compress};
@@ -182,7 +181,7 @@ impl AppUniqueness for AppCheckerSha256 {
     }
 }
 
-impl ClientData<32_usize> for AppCheckerSha256 {
+impl digest::Client<32_usize> for AppCheckerSha256 {
     fn add_mut_data_done(&self, _result: Result<(), ErrorCode>, _data: SubSliceMut<'static, u8>) {}
 
     fn add_data_done(&self, result: Result<(), ErrorCode>, data: SubSlice<'static, u8>) {
@@ -198,9 +197,7 @@ impl ClientData<32_usize> for AppCheckerSha256 {
             }
         }
     }
-}
 
-impl ClientVerify<32_usize> for AppCheckerSha256 {
     fn verification_done(
         &self,
         result: Result<bool, ErrorCode>,
@@ -231,9 +228,7 @@ impl ClientVerify<32_usize> for AppCheckerSha256 {
             }
         }
     }
-}
 
-impl ClientHash<32_usize> for AppCheckerSha256 {
     fn hash_done(&self, _result: Result<(), ErrorCode>, _digest: &'static mut [u8; 32_usize]) {}
 }
 

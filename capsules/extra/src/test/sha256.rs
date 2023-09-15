@@ -13,7 +13,7 @@ use core::cmp;
 use crate::sha256::Sha256Software;
 use kernel::debug;
 use kernel::hil::digest;
-use kernel::hil::digest::{Digest, DigestData, DigestVerify};
+use kernel::hil::digest::{DigestData, DigestVerify};
 use kernel::utilities::cells::TakeCell;
 use kernel::utilities::leasable_buffer::SubSlice;
 use kernel::utilities::leasable_buffer::SubSliceMut;
@@ -49,7 +49,7 @@ impl TestSha256 {
     }
 
     pub fn run(&'static self) {
-        self.sha.set_client(self);
+        DigestData::set_client(self.sha, self);
         let data = self.data.take().unwrap();
         let chunk_size = cmp::min(CHUNK_SIZE, data.len());
         self.position.set(chunk_size);
@@ -62,7 +62,7 @@ impl TestSha256 {
     }
 }
 
-impl digest::ClientData<32> for TestSha256 {
+impl digest::Client<32> for TestSha256 {
     fn add_data_done(&self, _result: Result<(), ErrorCode>, _data: SubSlice<'static, u8>) {
         unimplemented!()
     }
@@ -105,9 +105,7 @@ impl digest::ClientData<32> for TestSha256 {
             }
         }
     }
-}
 
-impl digest::ClientVerify<32> for TestSha256 {
     fn verification_done(&self, result: Result<bool, ErrorCode>, compare: &'static mut [u8; 32]) {
         self.hash.put(Some(compare));
         debug!("Sha256Test: Verification result: {:?}", result);
@@ -126,8 +124,6 @@ impl digest::ClientVerify<32> for TestSha256 {
             }
         }
     }
-}
 
-impl digest::ClientHash<32> for TestSha256 {
     fn hash_done(&self, _result: Result<(), ErrorCode>, _digest: &'static mut [u8; 32]) {}
 }
