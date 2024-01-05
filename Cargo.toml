@@ -50,6 +50,7 @@ members = [
     "capsules/aes_gcm",
     "capsules/core",
     "capsules/extra",
+    "capsules/rsa_sw",
     "chips/apollo3",
     "chips/arty_e21_chip",
     "chips/e310_g002",
@@ -108,3 +109,6 @@ lto = true
 opt-level = "z"
 debug = true
 codegen-units = 1
+
+[patch.crates-io]
+crypto-bigint = { path = "../rustcrypto/crypto-bigint" }

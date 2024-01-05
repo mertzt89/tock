@@ -15,8 +15,11 @@
 
 use kernel::capabilities;
 use kernel::component::Component;
+use kernel::deferred_call::DeferredCallClient;
 use kernel::hil;
+use kernel::hil::digest::Digest;
 use kernel::hil::led::LedLow;
+use kernel::hil::public_key_crypto::signature::SignatureVerify;
 use kernel::hil::Controller;
 use kernel::platform::{KernelResources, SyscallDriverLookup};
 use kernel::scheduler::round_robin::RoundRobinSched;
@@ -91,6 +94,13 @@ struct Hail {
     dac: &'static capsules_extra::dac::Dac<'static>,
     scheduler: &'static RoundRobinSched<'static>,
     systick: cortexm4::systick::SysTick,
+    credentials_checking_policy: &'static kernel::process_checker::signature::AppCheckerSignature<
+        'static,
+        rsa_sw::verifier::RsaSignatureVerifier<'static, 32, 256>,
+        capsules_extra::sha256::Sha256Software<'static>,
+        32,
+        256,
+    >,
 }
 
 /// Mapping of integer syscalls to objects that implement syscalls.
@@ -130,7 +140,13 @@ impl KernelResources<sam4l::chip::Sam4l<Sam4lDefaultPeripherals>> for Hail {
     type SyscallDriverLookup = Self;
     type SyscallFilter = ();
     type ProcessFault = ();
-    type CredentialsCheckingPolicy = ();
+    type CredentialsCheckingPolicy = kernel::process_checker::signature::AppCheckerSignature<
+        'static,
+        rsa_sw::verifier::RsaSignatureVerifier<'static, 32, 256>,
+        capsules_extra::sha256::Sha256Software<'static>,
+        32,
+        256,
+    >;
     type Scheduler = RoundRobinSched<'static>;
     type SchedulerTimer = cortexm4::systick::SysTick;
     type WatchDog = ();
@@ -146,7 +162,7 @@ impl KernelResources<sam4l::chip::Sam4l<Sam4lDefaultPeripherals>> for Hail {
         &()
     }
     fn credentials_checking_policy(&self) -> &'static Self::CredentialsCheckingPolicy {
-        &()
+        self.credentials_checking_policy
     }
     fn scheduler(&self) -> &Self::Scheduler {
         self.scheduler
@@ -488,6 +504,43 @@ unsafe fn start() -> (
         kernel::process::ThresholdRestartThenPanicFaultPolicy::new(4)
     );
 
+    ///////
+    // App Credential Checker
+    ///////
+
+    let sha256_hash_buf = static_init!([u8; 32], [0; 32]);
+    let rsa2048_signature_buf = static_init!([u8; 256], [0; 256]);
+
+    let sha256 = static_init!(
+        capsules_extra::sha256::Sha256Software<'static>,
+        capsules_extra::sha256::Sha256Software::new()
+    );
+    sha256.register();
+
+    let rsa2048verifier = static_init!(
+        rsa_sw::verifier::RsaSignatureVerifier<'static, 32, 256>,
+        rsa_sw::verifier::RsaSignatureVerifier::new()
+    );
+    rsa2048verifier.register();
+
+    let checker = static_init!(
+        kernel::process_checker::signature::AppCheckerSignature<
+            rsa_sw::verifier::RsaSignatureVerifier<'static, 32, 256>,
+            capsules_extra::sha256::Sha256Software<'static>,
+            32,
+            256,
+        >,
+        kernel::process_checker::signature::AppCheckerSignature::new(
+            sha256,
+            rsa2048verifier,
+            sha256_hash_buf,
+            rsa2048_signature_buf,
+            tock_tbf::types::TbfFooterV2CredentialsType::Rsa2048
+        )
+    );
+    sha256.set_client(checker);
+    rsa2048verifier.set_verify_client(checker);
+
     let scheduler = components::sched::round_robin::RoundRobinComponent::new(&PROCESSES)
         .finalize(components::round_robin_component_static!(NUM_PROCS));
 
@@ -538,8 +591,9 @@ unsafe fn start() -> (
         static _eappmem: u8;
     }
 
-    kernel::process::load_processes(
+    kernel::process::load_and_check_processes(
         board_kernel,
+        &hail,
         chip,
         core::slice::from_raw_parts(
             &_sapps as *const u8,
