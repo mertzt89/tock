@@ -9,23 +9,21 @@ _It is a work in progress. Comments and pull requests are appreciated!_
 
 <!-- toc -->
 
-- [Overview](#overview)
-- [Is Tock a Good Fit for my Hardware?](#is-tock-a-good-fit-for-my-hardware)
-- [Crate Details](#crate-details)
-  * [`arch` Crate](#arch-crate)
-  * [`chip` Crate](#chip-crate)
-    + [Tips and Tools](#tips-and-tools)
-  * [`board` Crate](#board-crate)
-    + [Component Creation](#component-creation)
-    + [Board Support](#board-support)
+<!-- Build table of contents with tools/toc.sh -->
+
+  - [`arch` Crate](#arch-crate)
+  - [`chip` Crate](#chip-crate)
+    - [Tips and Tools](#tips-and-tools)
+  - [`board` Crate](#board-crate)
+    - [Component Creation](#component-creation)
+    - [Board Support](#board-support)
       - [`panic!`s (aka `io.rs`)](#panics-aka-iors)
       - [Board Cargo.toml, build.rs](#board-cargotoml-buildrs)
       - [Board Makefile](#board-makefile)
-        * [Getting the built kernel onto a board](#getting-the-built-kernel-onto-a-board)
+        - [Getting the built kernel onto a board](#getting-the-built-kernel-onto-a-board)
       - [Board README](#board-readme)
-    + [Loading Apps](#loading-apps)
-    + [Common Pitfalls](#common-pitfalls)
-- [Adding a Platform to Tock Repository](#adding-a-platform-to-tock-repository)
+    - [Loading Apps](#loading-apps)
+    - [Common Pitfalls](#common-pitfalls)
 
 <!-- tocstop -->
 

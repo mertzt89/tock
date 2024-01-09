@@ -24,19 +24,21 @@ of which is tailored to a specific use common in kernel code.
 
 <!-- toc -->
 
+<!-- Build table of contents with tools/toc.sh -->
+
 - [Brief Overview of Borrowing in Rust](#brief-overview-of-borrowing-in-rust)
-- [Issues with Borrowing in Event-Driven code](#issues-with-borrowing-in-event-driven-code)
+- [Issues with Borrowing in Event-Driven code](#issues-with-borrowing-in-eventdriven-code)
 - [`Cell`s in Tock](#cells-in-tock)
 - [The `TakeCell` abstraction](#the-takecell-abstraction)
-  * [Example use of `take` and `replace`](#example-use-of-take-and-replace)
-  * [Example use of `map`](#example-use-of-map)
-    + [`map` variants](#map-variants)
+  - [Example use of `take` and `replace`](#example-use-of-take-and-replace)
+  - [Example use of `map`](#example-use-of-map)
+    - [`map` variants](#map-variants)
 - [`MapCell`](#mapcell)
 - [`OptionalCell`](#optionalcell)
-  * [Comparison to `TakeCell`](#comparison-to-takecell)
+  - [Comparison to `TakeCell`](#comparison-to-takecell)
 - [`VolatileCell`](#volatilecell)
 - [Cell Extensions](#cell-extensions)
-  * [`NumericCellExt`](#numericcellext)
+  - [`NumericCellExt`](#numericcellext)
 
 <!-- tocstop -->
 

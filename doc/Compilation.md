@@ -10,22 +10,24 @@ of how platforms program each onto an actual board.
 
 <!-- toc -->
 
+<!-- Build table of contents with tools/toc.sh -->
+
 - [Compiling the kernel](#compiling-the-kernel)
-  * [Life of a Tock compilation](#life-of-a-tock-compilation)
-    + [Platform Build Scripts](#platform-build-scripts)
-  * [LLVM Binutils](#llvm-binutils)
-  * [Special `.apps` section](#special-apps-section)
+  - [Life of a Tock compilation](#life-of-a-tock-compilation)
+    - [Platform Build Scripts](#platform-build-scripts)
+  - [LLVM Binutils](#llvm-binutils)
+  - [Special `.apps` section](#special-apps-section)
 - [Compiling a process](#compiling-a-process)
-  * [Executing without Virtual Memory](#executing-without-virtual-memory)
-    + [Position Independent Code](#position-independent-code)
-    + [Fixed Address Loading](#fixed-address-loading)
+  - [Executing without Virtual Memory](#executing-without-virtual-memory)
+    - [Position Independent Code](#position-independent-code)
+    - [Fixed Address Loading](#fixed-address-loading)
       - [Fixed Address TBF Header](#fixed-address-tbf-header)
       - [Loading Fixed Address Processes into Flash](#loading-fixed-address-processes-into-flash)
       - [Booting Fixed Address Processes](#booting-fixed-address-processes)
-  * [Tock Binary Format](#tock-binary-format)
-  * [Tock Application Bundle](#tock-application-bundle)
-    + [TAB Format](#tab-format)
-    + [Metadata](#metadata)
+  - [Tock Binary Format](#tock-binary-format)
+  - [Tock Application Bundle](#tock-application-bundle)
+    - [TAB Format](#tab-format)
+    - [Metadata](#metadata)
 - [Loading the kernel and processes onto a board](#loading-the-kernel-and-processes-onto-a-board)
 
 <!-- tocstop -->

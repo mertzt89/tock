@@ -7,14 +7,16 @@ group](wg/core/README.md) maintains the Tock project.
 
 <!-- toc -->
 
+<!-- Build table of contents with tools/toc.sh -->
+
 - [Roadmap and Feature Planning](#roadmap-and-feature-planning)
 - [Outreach and Education](#outreach-and-education)
 - [Preparing a Release](#preparing-a-release)
-  * [Release Tasks](#release-tasks)
-    + [Before the release](#before-the-release)
-    + [Tagging a release candidate](#tagging-a-release-candidate)
-    + [Release testing](#release-testing)
-    + [Tagging a release](#tagging-a-release)
+  - [Release Tasks](#release-tasks)
+    - [Before the release](#before-the-release)
+    - [Tagging a release candidate](#tagging-a-release-candidate)
+    - [Release testing](#release-testing)
+    - [Tagging a release](#tagging-a-release)
 
 <!-- tocstop -->
 

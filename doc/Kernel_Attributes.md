@@ -10,12 +10,14 @@ to learn about the kernel installed on the board.
 
 <!-- toc -->
 
+<!-- Build table of contents with tools/toc.sh -->
+
 - [Format](#format)
-  * [Header Format](#header-format)
-  * [TLV Format](#tlv-format)
+  - [Header Format](#header-format)
+  - [TLV Format](#tlv-format)
 - [TLVs](#tlvs)
-  * [App Memory (0x0101)](#app-memory-0x0101)
-  * [Kernel Binary (0x0102)](#kernel-binary-0x0102)
+  - [App Memory (0x0101)](#app-memory-0x0101)
+  - [Kernel Binary (0x0102)](#kernel-binary-0x0102)
 - [Kernel Attributes Location](#kernel-attributes-location)
 
 <!-- tocstop -->

@@ -8,21 +8,23 @@ developing Tock.
 
 <!-- toc -->
 
+<!-- Build table of contents with tools/toc.sh -->
+
 - [Requirements](#requirements)
-  * [Super Quick Setup](#super-quick-setup)
-  * [Installing Requirements](#installing-requirements)
-    + [Rust (nightly)](#rust-nightly)
-    + [Tockloader](#tockloader)
+  - [Super Quick Setup](#super-quick-setup)
+  - [Installing Requirements](#installing-requirements)
+    - [Rust (nightly)](#rust-nightly)
+    - [Tockloader](#tockloader)
 - [Compiling the Kernel](#compiling-the-kernel)
 - [Loading the kernel onto a board](#loading-the-kernel-onto-a-board)
-  * [Installing `JLinkExe`](#installing-jlinkexe)
-  * [Installing `openocd`](#installing-openocd)
-  * [(Linux): Adding a `udev` rule](#linux-adding-a-udev-rule)
+  - [Installing `JLinkExe`](#installing-jlinkexe)
+  - [Installing `openocd`](#installing-openocd)
+  - [(Linux): Adding a `udev` rule](#linux-adding-a-udev-rule)
 - [Installing your first application](#installing-your-first-application)
 - [Compiling applications](#compiling-applications)
 - [Developing TockOS](#developing-tockos)
-  * [Formatting Rust source code](#formatting-rust-source-code)
-  * [Keeping build tools up to date](#keeping-build-tools-up-to-date)
+  - [Formatting Rust source code](#formatting-rust-source-code)
+  - [Keeping build tools up to date](#keeping-build-tools-up-to-date)
 
 <!-- tocstop -->
 

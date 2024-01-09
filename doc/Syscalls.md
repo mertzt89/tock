@@ -10,18 +10,20 @@ This document describes the considerations behind the system call design.
 
 <!-- toc -->
 
+<!-- Build table of contents with tools/toc.sh -->
+
 - [Overview of System Calls in Tock](#overview-of-system-calls-in-tock)
 - [Process State](#process-state)
 - [Startup](#startup)
 - [System Call Invocation](#system-call-invocation)
 - [The Context Switch](#the-context-switch)
-  * [Context Switch Interface](#context-switch-interface)
-  * [Cortex-M Architecture Details](#cortex-m-architecture-details)
-  * [RISC-V Architecture Details](#risc-v-architecture-details)
+  - [Context Switch Interface](#context-switch-interface)
+  - [Cortex-M Architecture Details](#cortexm-architecture-details)
+  - [RISC-V Architecture Details](#riscv-architecture-details)
 - [How System Calls Connect to Drivers](#how-system-calls-connect-to-drivers)
 - [Error and Return Types](#error-and-return-types)
-  * [Naming Conventions](#naming-conventions)
-  * [Type Descriptions](#type-descriptions)
+  - [Naming Conventions](#naming-conventions)
+  - [Type Descriptions](#type-descriptions)
 - [Allocated Driver Numbers](#allocated-driver-numbers)
 
 <!-- tocstop -->

@@ -23,6 +23,8 @@ structure is reflected in the software's directory structure.
 
 <!-- toc -->
 
+<!-- Build table of contents with tools/toc.sh -->
+
 - [Tock Architecture](#tock-architecture)
 - [Tock Directory Structure](#tock-directory-structure)
 

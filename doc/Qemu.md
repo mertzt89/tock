@@ -12,6 +12,8 @@ confusing. The long-term goal is to integrate QEMU as a core part of CI for Tock
 
 <!-- toc -->
 
+<!-- Build table of contents with tools/toc.sh -->
+
 - [Supported Boards](#supported-boards)
 - [Building QEMU](#building-qemu)
 

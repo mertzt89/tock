@@ -9,16 +9,15 @@ gives code examples.
 
 <!-- toc -->
 
-- [Overview](#overview)
-- [Tock 2.0 System Call API](#tock-20-system-call-api)
-  * [`SyscallDriver`](#syscalldriver)
-- [Porting Capsules and Example Code](#porting-capsules-and-example-code)
-  * [Examples of command and `CommandResult`](#examples-of-command-and-commandresult)
-    + [ReturnCode versus ErrorCode](#returncode-versus-errorcode)
-  * [Examples of `allow_readwrite` and `allow_readonly`](#examples-of-allow_readwrite-and-allow_readonly)
-  * [The new subscription mechanism](#the-new-subscription-mechanism)
-  * [Using `ReadOnlyProcessBuffer` and `ReadWriteProcessBuffer`: `console`](#using-readonlyprocessbuffer-and-readwriteprocessbuffer-console)
-  * [Using `ReadOnlyProcessBuffer` and `ReadWriteProcessBuffer`: `spi_controller`](#using-readonlyprocessbuffer-and-readwriteprocessbuffer-spi_controller)
+<!-- Build table of contents with tools/toc.sh -->
+
+  - [`SyscallDriver`](#syscalldriver)
+  - [Examples of command and `CommandResult`](#examples-of-command-and-commandresult)
+    - [ReturnCode versus ErrorCode](#returncode-versus-errorcode)
+  - [Examples of `allow_readwrite` and `allow_readonly`](#examples-of-allowreadwrite-and-allowreadonly)
+  - [The new subscription mechanism](#the-new-subscription-mechanism)
+  - [Using `ReadOnlyProcessBuffer` and `ReadWriteProcessBuffer`: `console`](#using-readonlyprocessbuffer-and-readwriteprocessbuffer-console)
+  - [Using `ReadOnlyProcessBuffer` and `ReadWriteProcessBuffer`: `spi_controller`](#using-readonlyprocessbuffer-and-readwriteprocessbuffer-spicontroller)
 
 <!-- tocstop -->
 

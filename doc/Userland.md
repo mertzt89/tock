@@ -9,12 +9,14 @@ of how applications function.
 
 <!-- toc -->
 
+<!-- Build table of contents with tools/toc.sh -->
+
 - [Overview of Processes in Tock](#overview-of-processes-in-tock)
 - [System Calls](#system-calls)
 - [Upcalls and Termination](#upcalls-and-termination)
-- [Inter-Process Communication](#inter-process-communication)
-  * [Services](#services)
-  * [Clients](#clients)
+- [Inter-Process Communication](#interprocess-communication)
+  - [Services](#services)
+  - [Clients](#clients)
 - [Application Entry Point](#application-entry-point)
 - [Stack and Heap](#stack-and-heap)
 - [Debugging](#debugging)

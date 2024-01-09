@@ -10,11 +10,8 @@ _It is a work in progress. Comments and pull requests are appreciated!_
 
 <!-- toc -->
 
-- [Overview](#overview)
-- [Structure](#structure)
-- [Boards](#boards)
-- [Everything Else](#everything-else)
-- [Examples](#examples)
+<!-- Build table of contents with tools/toc.sh -->
+
 
 <!-- tocstop -->
 

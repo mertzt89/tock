@@ -5,20 +5,22 @@ External Dependencies
 
 <!-- toc -->
 
+<!-- Build table of contents with tools/toc.sh -->
+
 - [External Dependency Design](#external-dependency-design)
-  * [Rationale](#rationale)
-  * [Dependency Structure of Tock-Internal Crates](#dependency-structure-of-tock-internal-crates)
+  - [Rationale](#rationale)
+  - [Dependency Structure of Tock-Internal Crates](#dependency-structure-of-tockinternal-crates)
 - [External Dependency Selection](#external-dependency-selection)
-  * [General Guidelines for Dependency Selection](#general-guidelines-for-dependency-selection)
-    + [Provide Important Functionality](#provide-important-functionality)
-    + [Project Maturity](#project-maturity)
-    + [Limited Sub-dependencies](#limited-sub-dependencies)
-  * [Board-Specific External Dependencies](#board-specific-external-dependencies)
-  * [Capsule Crate-Specific External Dependencies](#capsule-crate-specific-external-dependencies)
+  - [General Guidelines for Dependency Selection](#general-guidelines-for-dependency-selection)
+    - [Provide Important Functionality](#provide-important-functionality)
+    - [Project Maturity](#project-maturity)
+    - [Limited Sub-dependencies](#limited-subdependencies)
+  - [Board-Specific External Dependencies](#boardspecific-external-dependencies)
+  - [Capsule Crate-Specific External Dependencies](#capsule-cratespecific-external-dependencies)
 - [Including the Dependency](#including-the-dependency)
-  * [Including Capsule Crate-Specific External Dependencies](#including-capsule-crate-specific-external-dependencies)
-  * [Including Board-Specific External Dependencies](#including-board-specific-external-dependencies)
-  * [Documenting the Dependency and its Tree](#documenting-the-dependency-and-its-tree)
+  - [Including Capsule Crate-Specific External Dependencies](#including-capsule-cratespecific-external-dependencies)
+  - [Including Board-Specific External Dependencies](#including-boardspecific-external-dependencies)
+  - [Documenting the Dependency and its Tree](#documenting-the-dependency-and-its-tree)
 - [Design Goals and Alternative Approaches](#design-goals-and-alternative-approaches)
 
 <!-- tocstop -->

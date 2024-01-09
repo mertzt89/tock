@@ -26,6 +26,8 @@ kernel.
 
 <!-- toc -->
 
+<!-- Build table of contents with tools/toc.sh -->
+
 - [Rust lifetimes](#rust-lifetimes)
 - [Buffer management](#buffer-management)
 - [Circular dependencies](#circular-dependencies)

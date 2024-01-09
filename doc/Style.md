@@ -8,9 +8,11 @@ to.
 
 <!-- toc -->
 
+<!-- Build table of contents with tools/toc.sh -->
+
 - [Code Style](#code-style)
 - [Commenting](#commenting)
-  * [Example: mycapsule.rs](#example-mycapsulers)
+  - [Example: mycapsule.rs](#example-mycapsulers)
 - [Using Descriptive Names](#using-descriptive-names)
 
 <!-- tocstop -->

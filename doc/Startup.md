@@ -7,15 +7,17 @@ This document walks through how all of the components of Tock start up.
 
 <!-- toc -->
 
+<!-- Build table of contents with tools/toc.sh -->
+
 - [Optional Bootloader](#optional-bootloader)
 - [Tock first instructions](#tock-first-instructions)
-  * [ARM Vector Table and IRQ table](#arm-vector-table-and-irq-table)
-  * [RISC-V](#risc-v)
+  - [ARM Vector Table and IRQ table](#arm-vector-table-and-irq-table)
+  - [RISC-V](#riscv)
 - [Reset Handler](#reset-handler)
-  * [Memory Initialization](#memory-initialization)
-  * [RISC-V Trap setup](#risc-v-trap-setup)
-  * [MCU Setup](#mcu-setup)
-  * [Peripheral and Capsule Initialization](#peripheral-and-capsule-initialization)
+  - [Memory Initialization](#memory-initialization)
+  - [RISC-V Trap setup](#riscv-trap-setup)
+  - [MCU Setup](#mcu-setup)
+  - [Peripheral and Capsule Initialization](#peripheral-and-capsule-initialization)
 - [Application Startup](#application-startup)
 - [Scheduler Execution](#scheduler-execution)
 

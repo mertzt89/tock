@@ -8,17 +8,19 @@ kernel, applications, and supporting state.
 
 <!-- toc -->
 
+<!-- Build table of contents with tools/toc.sh -->
+
 - [Flash](#flash)
-  * [Kernel code](#kernel-code)
-  * [Process code](#process-code)
+  - [Kernel code](#kernel-code)
+  - [Process code](#process-code)
 - [RAM](#ram)
-  * [Kernel RAM](#kernel-ram)
-  * [Process RAM](#process-ram)
+  - [Kernel RAM](#kernel-ram)
+  - [Process RAM](#process-ram)
 - [Hardware Implementations](#hardware-implementations)
-  * [SAM4L](#sam4l)
-    + [Flash](#flash-1)
-    + [RAM](#ram-1)
-    + [Overview](#overview)
+  - [SAM4L](#sam4l)
+    - [Flash](#flash)
+    - [RAM](#ram)
+    - [Overview](#overview)
 
 <!-- tocstop -->
 

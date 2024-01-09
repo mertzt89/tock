@@ -9,12 +9,14 @@ but should still preserve safety in the overall OS.
 
 <!-- toc -->
 
-- [`static_init!`](#static_init)
-  * [Use](#use)
-  * [Soundness](#soundness)
-  * [Alternatives](#alternatives)
+<!-- Build table of contents with tools/toc.sh -->
+
+- [`static_init!`](#staticinit)
+  - [Use](#use)
+  - [Soundness](#soundness)
+  - [Alternatives](#alternatives)
 - [Capabilities: Restricting Access to Certain Functions and Operations](#capabilities-restricting-access-to-certain-functions-and-operations)
-  * [Capability Examples](#capability-examples)
+  - [Capability Examples](#capability-examples)
 
 <!-- tocstop -->
 

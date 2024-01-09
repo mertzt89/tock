@@ -10,9 +10,11 @@ memory layout](Memory_Layout.md).
 
 <!-- toc -->
 
+<!-- Build table of contents with tools/toc.sh -->
+
 - [Process Isolation](#process-isolation)
-  * [Flash](#flash)
-  * [RAM](#ram)
+  - [Flash](#flash)
+  - [RAM](#ram)
 
 <!-- tocstop -->
 

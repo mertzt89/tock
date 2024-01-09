@@ -4,21 +4,23 @@
 
 <!-- toc -->
 
+<!-- Build table of contents with tools/toc.sh -->
+
 - [App Storage](#app-storage)
 - [Empty Tock Apps](#empty-tock-apps)
 - [TBF Header Section](#tbf-header-section)
-  * [TBF Header Base](#tbf-header-base)
-  * [TLV Elements](#tlv-elements)
-  * [TLV Types](#tlv-types)
-    + [`1` Main](#1-main)
-    + [`2` Writeable Flash Region](#2-writeable-flash-region)
-    + [`3` Package Name](#3-package-name)
-    + [`5` Fixed Addresses](#5-fixed-addresses)
-    + [`6` Permissions](#6-permissions)
-    + [`7` Storage Permissions](#7-storage-permissions)
-    + [`8` Kernel Version](#8-kernel-version)
-    + [`9` Program](#9-program)
-    + [`128` Credentials Footer](#128-credentials-footer)
+  - [TBF Header Base](#tbf-header-base)
+  - [TLV Elements](#tlv-elements)
+  - [TLV Types](#tlv-types)
+    - [`1` Main](#1-main)
+    - [`2` Writeable Flash Region](#2-writeable-flash-region)
+    - [`3` Package Name](#3-package-name)
+    - [`5` Fixed Addresses](#5-fixed-addresses)
+    - [`6` Permissions](#6-permissions)
+    - [`7` Storage Permissions](#7-storage-permissions)
+    - [`8` Kernel Version](#8-kernel-version)
+    - [`9` Program](#9-program)
+    - [`128` Credentials Footer](#128-credentials-footer)
 - [Code](#code)
 
 <!-- tocstop -->

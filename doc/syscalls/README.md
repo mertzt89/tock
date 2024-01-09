@@ -9,19 +9,21 @@ provided syscalls, and the driver specific interfaces (using `allow`,
 
 <!-- toc -->
 
+<!-- Build table of contents with tools/toc.sh -->
+
 - [Syscall Binary Interface](#syscall-binary-interface)
 - [Core Kernel Provided Syscalls](#core-kernel-provided-syscalls)
 - [Capsule Provided Drivers](#capsule-provided-drivers)
-  * [Base](#base)
-  * [Kernel](#kernel)
-  * [Hardware Access](#hardware-access)
-  * [Radio](#radio)
-  * [Cryptography](#cryptography)
-  * [Storage](#storage)
-  * [Sensors](#sensors)
-  * [Sensor ICs](#sensor-ics)
-  * [Other ICs](#other-ics)
-  * [Miscellaneous](#miscellaneous)
+  - [Base](#base)
+  - [Kernel](#kernel)
+  - [Hardware Access](#hardware-access)
+  - [Radio](#radio)
+  - [Cryptography](#cryptography)
+  - [Storage](#storage)
+  - [Sensors](#sensors)
+  - [Sensor ICs](#sensor-ics)
+  - [Other ICs](#other-ics)
+  - [Miscellaneous](#miscellaneous)
 
 <!-- tocstop -->
 

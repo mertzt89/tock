@@ -5,11 +5,13 @@ Bluetooth Low Energy Design Document
 
 <!-- toc -->
 
+<!-- Build table of contents with tools/toc.sh -->
+
 - [System call interface](#system-call-interface)
-  * [Device address](#device-address)
-  * [Advertising](#advertising)
-  * [Scanning](#scanning)
-  * [Connection-oriented communication](#connection-oriented-communication)
+  - [Device address](#device-address)
+  - [Advertising](#advertising)
+  - [Scanning](#scanning)
+  - [Connection-oriented communication](#connectionoriented-communication)
 - [Hardware Interface Layer (HIL)](#hardware-interface-layer-hil)
 
 <!-- tocstop -->

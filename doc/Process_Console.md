@@ -8,24 +8,12 @@ Process Console
 
 <!-- toc -->
 
-- [Setup](#setup)
-- [Using Process Console](#using-process-console)
-- [Commands](#commands)
-  * [`help`](#help)
-  * [`list`](#list)
-    + [`list` Command Fields](#list-command-fields)
-  * [`status`](#status)
-  * [`start` and `stop`](#start-and-stop)
-  * [`terminate` and `boot`](#terminate-and-boot)
-  * [`fault`](#fault)
-  * [`panic`](#panic)
-  * [`reset`](#reset)
-  * [`kernel`](#kernel)
-  * [`process`](#process)
-  * [`console-start`](#console-start)
-  * [`console-stop`](#console-stop)
-  * [`commands history`](#commands-history)
-  * [`command navigation`](#command-navigation)
+<!-- Build table of contents with tools/toc.sh -->
+
+  - [`help`](#help)
+  - [`list`](#list)
+    - [`list` Command Fields](#list-command-fields)
+  - [`status`](#status)
 
 <!-- tocstop -->
 
