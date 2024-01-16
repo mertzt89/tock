@@ -99,8 +99,8 @@ pub struct App {
     read_len: usize,
 }
 
-pub struct Console<'a> {
-    uart: &'a dyn uart::UartData<'a>,
+pub struct Console<'a, U: uart::UartData<'a>> {
+    uart: &'a U,
     apps: Grant<
         App,
         UpcallCount<{ upcall::COUNT }>,
@@ -113,9 +113,9 @@ pub struct Console<'a> {
     rx_buffer: TakeCell<'static, [u8]>,
 }
 
-impl<'a> Console<'a> {
+impl<'a, U: uart::UartData<'a>> Console<'a, U> {
     pub fn new(
-        uart: &'a dyn uart::UartData<'a>,
+        uart: &'a U,
         tx_buffer: &'static mut [u8],
         rx_buffer: &'static mut [u8],
         grant: Grant<
@@ -124,7 +124,7 @@ impl<'a> Console<'a> {
             AllowRoCount<{ ro_allow::COUNT }>,
             AllowRwCount<{ rw_allow::COUNT }>,
         >,
-    ) -> Console<'a> {
+    ) -> Console<'a, U> {
         Console {
             uart: uart,
             apps: grant,
@@ -249,7 +249,7 @@ impl<'a> Console<'a> {
     }
 }
 
-impl SyscallDriver for Console<'_> {
+impl<'a, U: uart::UartData<'a>> SyscallDriver for Console<'a, U> {
     /// Initiate serial transfers
     ///
     /// ### `command_num`
@@ -304,7 +304,7 @@ impl SyscallDriver for Console<'_> {
     }
 }
 
-impl uart::TransmitClient for Console<'_> {
+impl<'a, U: uart::UartData<'a>> uart::TransmitClient for Console<'a, U> {
     fn transmitted_buffer(
         &self,
         buffer: &'static mut [u8],
@@ -353,7 +353,7 @@ impl uart::TransmitClient for Console<'_> {
     }
 }
 
-impl uart::ReceiveClient for Console<'_> {
+impl<'a, U: uart::UartData<'a>> uart::ReceiveClient for Console<'a, U> {
     fn received_buffer(
         &self,
         buffer: &'static mut [u8],
