@@ -50,42 +50,41 @@ use capsules_core::console::DEFAULT_BUF_SIZE;
 
 #[macro_export]
 macro_rules! uart_mux_component_static {
-    () => {{
+    ($U:ty $(,)?) => {{
         use capsules_core::virtualizers::virtual_uart::MuxUart;
         use kernel::static_buf;
-        let UART_MUX = static_buf!(MuxUart<'static>);
+        let UART_MUX = static_buf!(MuxUart<'static, U>);
         let RX_BUF = static_buf!([u8; capsules_core::virtualizers::virtual_uart::RX_BUF_LEN]);
         (UART_MUX, RX_BUF)
     }};
-    ($rx_buffer_len: literal) => {{
+    ($rx_buffer_len: literal, $U:ty $(,)?) => {{
         use capsules_core::virtualizers::virtual_uart::MuxUart;
         use kernel::static_buf;
-        let UART_MUX = static_buf!(MuxUart<'static>);
+        let UART_MUX = static_buf!(MuxUart<'static, U>);
         let RX_BUF = static_buf!([u8; $rx_buffer_len]);
         (UART_MUX, RX_BUF)
     }};
 }
 
-pub struct UartMuxComponent<const RX_BUF_LEN: usize> {
-    uart: &'static dyn uart::Uart<'static>,
+pub struct UartMuxComponent<const RX_BUF_LEN: usize, U: uart::Uart<'static>> {
+    uart: &'static U,
     baud_rate: u32,
 }
 
-impl<const RX_BUF_LEN: usize> UartMuxComponent<RX_BUF_LEN> {
-    pub fn new(
-        uart: &'static dyn uart::Uart<'static>,
-        baud_rate: u32,
-    ) -> UartMuxComponent<RX_BUF_LEN> {
+impl<const RX_BUF_LEN: usize, U: uart::Uart<'static>> UartMuxComponent<RX_BUF_LEN, U> {
+    pub fn new(uart: &'static U, baud_rate: u32) -> UartMuxComponent<RX_BUF_LEN, U> {
         UartMuxComponent { uart, baud_rate }
     }
 }
 
-impl<const RX_BUF_LEN: usize> Component for UartMuxComponent<RX_BUF_LEN> {
+impl<const RX_BUF_LEN: usize, U: uart::Uart<'static>> Component
+    for UartMuxComponent<RX_BUF_LEN, U>
+{
     type StaticInput = (
-        &'static mut MaybeUninit<MuxUart<'static>>,
+        &'static mut MaybeUninit<MuxUart<'static, U>>,
         &'static mut MaybeUninit<[u8; RX_BUF_LEN]>,
     );
-    type Output = &'static MuxUart<'static>;
+    type Output = &'static MuxUart<'static, U>;
 
     fn finalize(self, s: Self::StaticInput) -> Self::Output {
         let rx_buf = s.1.write([0; RX_BUF_LEN]);
@@ -102,31 +101,33 @@ impl<const RX_BUF_LEN: usize> Component for UartMuxComponent<RX_BUF_LEN> {
 
 #[macro_export]
 macro_rules! console_component_static {
-    () => {{
+    ($U:ty $(,)?) => {{
         use capsules_core::console::{Console, DEFAULT_BUF_SIZE};
         use capsules_core::virtualizers::virtual_uart::UartDevice;
         use kernel::static_buf;
         let read_buf = static_buf!([u8; DEFAULT_BUF_SIZE]);
         let write_buf = static_buf!([u8; DEFAULT_BUF_SIZE]);
         // Create virtual device for console.
-        let console_uart = static_buf!(UartDevice);
-        let console = static_buf!(Console<'static>);
+        let console_uart = static_buf!(UartDevice<U>);
+        let console = static_buf!(Console<'static, UartDevice<U>>);
         (write_buf, read_buf, console_uart, console)
     }};
 }
 
-pub struct ConsoleComponent {
+pub type ConsoleComponentType<U> = console::Console<'static, UartDevice<'static, U>>;
+
+pub struct ConsoleComponent<U: uart::Uart<'static>> {
     board_kernel: &'static kernel::Kernel,
     driver_num: usize,
-    uart_mux: &'static MuxUart<'static>,
+    uart_mux: &'static MuxUart<'static, U>,
 }
 
-impl ConsoleComponent {
+impl<U: uart::Uart<'static>> ConsoleComponent<U> {
     pub fn new(
         board_kernel: &'static kernel::Kernel,
         driver_num: usize,
-        uart_mux: &'static MuxUart,
-    ) -> ConsoleComponent {
+        uart_mux: &'static MuxUart<U>,
+    ) -> ConsoleComponent<U> {
         ConsoleComponent {
             board_kernel: board_kernel,
             driver_num: driver_num,
@@ -135,14 +136,14 @@ impl ConsoleComponent {
     }
 }
 
-impl Component for ConsoleComponent {
+impl<U: uart::Uart<'static>> Component for ConsoleComponent<U> {
     type StaticInput = (
         &'static mut MaybeUninit<[u8; DEFAULT_BUF_SIZE]>,
         &'static mut MaybeUninit<[u8; DEFAULT_BUF_SIZE]>,
-        &'static mut MaybeUninit<UartDevice<'static>>,
-        &'static mut MaybeUninit<console::Console<'static>>,
+        &'static mut MaybeUninit<UartDevice<'static, U>>,
+        &'static mut MaybeUninit<console::Console<'static, UartDevice<'static, U>>>,
     );
-    type Output = &'static console::Console<'static>;
+    type Output = &'static console::Console<'static, UartDevice<'static, U>>;
 
     fn finalize(self, s: Self::StaticInput) -> Self::Output {
         let grant_cap = create_capability!(capabilities::MemoryAllocationCapability);
@@ -168,36 +169,36 @@ impl Component for ConsoleComponent {
 }
 #[macro_export]
 macro_rules! console_ordered_component_static {
-    ($A:ty $(,)?) => {{
+    ($A:ty, $U:ty $(,)?) => {{
         let mux_alarm = kernel::static_buf!(VirtualMuxAlarm<'static, $A>);
         let read_buf = static_buf!([u8; capsules_core::console::DEFAULT_BUF_SIZE]);
         let console_uart =
-            kernel::static_buf!(capsules_core::virtualizers::virtual_uart::UartDevice);
+            kernel::static_buf!(capsules_core::virtualizers::virtual_uart::UartDevice<U>);
         let console = kernel::static_buf!(ConsoleOrdered<'static, VirtualMuxAlarm<'static, $A>>);
         (mux_alarm, read_buf, console_uart, console)
     };};
 }
 
-pub struct ConsoleOrderedComponent<A: 'static + time::Alarm<'static>> {
+pub struct ConsoleOrderedComponent<A: 'static + time::Alarm<'static>, U: uart::Uart<'static>> {
     board_kernel: &'static kernel::Kernel,
     driver_num: usize,
-    uart_mux: &'static MuxUart<'static>,
+    uart_mux: &'static MuxUart<'static, U>,
     alarm_mux: &'static MuxAlarm<'static, A>,
     atomic_size: usize,
     retry_timer: u32,
     write_timer: u32,
 }
 
-impl<A: 'static + time::Alarm<'static>> ConsoleOrderedComponent<A> {
+impl<A: 'static + time::Alarm<'static>, U: uart::Uart<'static>> ConsoleOrderedComponent<A, U> {
     pub fn new(
         board_kernel: &'static kernel::Kernel,
         driver_num: usize,
-        uart_mux: &'static MuxUart<'static>,
+        uart_mux: &'static MuxUart<'static, U>,
         alarm_mux: &'static MuxAlarm<'static, A>,
         atomic_size: usize,
         retry_timer: u32,
         write_timer: u32,
-    ) -> ConsoleOrderedComponent<A> {
+    ) -> ConsoleOrderedComponent<A, U> {
         ConsoleOrderedComponent {
             board_kernel: board_kernel,
             driver_num: driver_num,
@@ -210,11 +211,13 @@ impl<A: 'static + time::Alarm<'static>> ConsoleOrderedComponent<A> {
     }
 }
 
-impl<A: 'static + time::Alarm<'static>> Component for ConsoleOrderedComponent<A> {
+impl<A: 'static + time::Alarm<'static>, U: uart::Uart<'static>> Component
+    for ConsoleOrderedComponent<A, U>
+{
     type StaticInput = (
         &'static mut MaybeUninit<VirtualMuxAlarm<'static, A>>,
         &'static mut MaybeUninit<[u8; DEFAULT_BUF_SIZE]>,
-        &'static mut MaybeUninit<UartDevice<'static>>,
+        &'static mut MaybeUninit<UartDevice<'static, U>>,
         &'static mut MaybeUninit<ConsoleOrdered<'static, VirtualMuxAlarm<'static, A>>>,
     );
     type Output = &'static ConsoleOrdered<'static, VirtualMuxAlarm<'static, A>>;

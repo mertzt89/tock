@@ -48,6 +48,8 @@ static mut PROCESS_PRINTER: Option<&'static kernel::process::ProcessPrinterText>
 #[link_section = ".stack_buffer"]
 pub static mut STACK_MEMORY: [u8; 0x1000] = [0; 0x1000];
 
+type ConsoleDriver = components::console::ConsoleComponentType;
+
 type SI7021Sensor = components::si7021::SI7021ComponentType<
     capsules_core::virtualizers::virtual_alarm::VirtualMuxAlarm<'static, sam4l::ast::Ast<'static>>,
     capsules_core::virtualizers::virtual_i2c::I2CDevice<'static, sam4l::i2c::I2CHw<'static>>,
@@ -57,7 +59,7 @@ type TemperatureDriver = components::temperature::TemperatureComponentType<SI702
 /// A structure representing this platform that holds references to all
 /// capsules for this platform.
 struct Hail {
-    console: &'static capsules_core::console::Console<'static>,
+    console: &'static ConsoleDriver,
     gpio: &'static capsules_core::gpio::GPIO<'static, sam4l::gpio::GPIOPin<'static>>,
     alarm: &'static capsules_core::alarm::AlarmDriver<
         'static,
