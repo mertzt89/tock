@@ -7,10 +7,11 @@
 
 use crate::hmac_sha256::HmacSha256Software;
 use crate::sha256::Sha256Software;
+use capsules_core::test::capsule_test::{CapsuleTest, CapsuleTestClient};
 use kernel::hil::digest;
 use kernel::hil::digest::{DigestAlgorithm, HmacSha256, HmacSha256Hmac};
 use kernel::hil::digest::{DigestData, DigestHash};
-use kernel::utilities::cells::{MapCell, TakeCell};
+use kernel::utilities::cells::{MapCell, OptionalCell, TakeCell};
 use kernel::utilities::leasable_buffer::SubSlice;
 use kernel::utilities::leasable_buffer::SubSliceMut;
 use kernel::ErrorCode;
@@ -21,6 +22,7 @@ pub struct TestHmacSha256 {
     data: TakeCell<'static, [u8]>, // The data to hash
     digest: MapCell<&'static mut HmacSha256Hmac>, // The supplied hash
     correct: &'static mut HmacSha256Hmac, // The supplied hash
+    client: OptionalCell<&'static dyn CapsuleTestClient>,
 }
 
 impl TestHmacSha256 {
@@ -37,6 +39,7 @@ impl TestHmacSha256 {
             data: TakeCell::new(data),
             digest: MapCell::new(digest),
             correct,
+            client: OptionalCell::empty(),
         }
     }
 
@@ -80,10 +83,20 @@ impl digest::ClientHash<HmacSha256Hmac> for TestHmacSha256 {
             }
         }
         kernel::debug!("HMAC-SHA256 matches!");
+
+        self.client.map(|client| {
+            client.done(Ok(()));
+        });
     }
 }
 
 impl digest::ClientVerify<32> for TestHmacSha256 {
     fn verification_done(&self, _result: Result<bool, ErrorCode>, _compare: &'static mut [u8; 32]) {
+    }
+}
+
+impl CapsuleTest for TestHmacSha256 {
+    fn set_client(&self, client: &'static dyn CapsuleTestClient) {
+        self.client.set(client);
     }
 }
