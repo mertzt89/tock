@@ -90,8 +90,12 @@ impl digest::ClientHash<HmacSha256Hmac> for TestHmacSha256 {
     }
 }
 
-impl digest::ClientVerify<32> for TestHmacSha256 {
-    fn verification_done(&self, _result: Result<bool, ErrorCode>, _compare: &'static mut [u8; 32]) {
+impl digest::ClientVerify<HmacSha256Hmac> for TestHmacSha256 {
+    fn verification_done(
+        &self,
+        _result: Result<bool, ErrorCode>,
+        _compare: &'static mut HmacSha256Hmac,
+    ) {
     }
 }
 
