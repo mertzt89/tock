@@ -88,11 +88,12 @@ impl TestLauncher {
         let index = self.test_index.get();
         self.test_index.increment();
         match index {
-            0 => unsafe { test::hmac_sha256_test::run_hmacsha256(self) },
-            1 => unsafe { test::siphash24_test::run_siphash24(self) },
-            2 => unsafe { test::aes_test::run_aes128_ctr(&self.peripherals.ecb, self) },
-            3 => unsafe { test::aes_test::run_aes128_cbc(&self.peripherals.ecb, self) },
-            4 => unsafe { test::aes_test::run_aes128_ecb(&self.peripherals.ecb, self) },
+            0 => unsafe { test::sha256_test::run_sha256(self) },
+            1 => unsafe { test::hmac_sha256_test::run_hmacsha256(self) },
+            2 => unsafe { test::siphash24_test::run_siphash24(self) },
+            3 => unsafe { test::aes_test::run_aes128_ctr(&self.peripherals.ecb, self) },
+            4 => unsafe { test::aes_test::run_aes128_cbc(&self.peripherals.ecb, self) },
+            5 => unsafe { test::aes_test::run_aes128_ecb(&self.peripherals.ecb, self) },
             _ => kernel::debug!("All tests finished."),
         }
     }
