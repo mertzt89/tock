@@ -192,6 +192,11 @@ type Ieee802154Driver = components::ieee802154::Ieee802154ComponentType<
     nrf52840::aes::AesECB<'static>,
 >;
 
+type Screen = components::ssd1306::Ssd1306ComponentType<nrf52840::i2c::TWI<'static>>;
+type ScreenDriver = components::screen::ScreenSharedComponentType<Screen>;
+
+type Checker = kernel::process_checker::basic::AppCheckerNames<'static, fn(&'static str) -> u32>;
+
 /// Supported drivers by the platform
 pub struct Platform {
     ble_radio: &'static capsules_extra::ble_advertising_driver::BLE<
@@ -240,7 +245,9 @@ pub struct Platform {
         >,
     >,
     kv_driver: &'static KVDriver,
+    screen: &'static ScreenDriver,
     scheduler: &'static RoundRobinSched<'static>,
+    checker: &'static Checker,
     systick: cortexm4::systick::SysTick,
 }
 
@@ -267,6 +274,7 @@ impl SyscallDriverLookup for Platform {
             capsules_core::spi_controller::DRIVER_NUM => f(Some(self.spi_controller)),
             capsules_extra::net::thread::driver::DRIVER_NUM => f(Some(self.thread_driver)),
             capsules_extra::kv_driver::DRIVER_NUM => f(Some(self.kv_driver)),
+            capsules_extra::screen::DRIVER_NUM => f(Some(self.screen)),
             _ => f(None),
         }
     }
@@ -278,7 +286,7 @@ impl KernelResources<nrf52840::chip::NRF52<'static, Nrf52840DefaultPeripherals<'
     type SyscallDriverLookup = Self;
     type SyscallFilter = ();
     type ProcessFault = ();
-    type CredentialsCheckingPolicy = ();
+    type CredentialsCheckingPolicy = Checker;
     type Scheduler = RoundRobinSched<'static>;
     type SchedulerTimer = cortexm4::systick::SysTick;
     type WatchDog = ();
@@ -294,7 +302,7 @@ impl KernelResources<nrf52840::chip::NRF52<'static, Nrf52840DefaultPeripherals<'
         &()
     }
     fn credentials_checking_policy(&self) -> &'static Self::CredentialsCheckingPolicy {
-        &()
+        self.checker
     }
     fn scheduler(&self) -> &Self::Scheduler {
         self.scheduler
@@ -308,6 +316,10 @@ impl KernelResources<nrf52840::chip::NRF52<'static, Nrf52840DefaultPeripherals<'
     fn context_switch_callback(&self) -> &Self::ContextSwitchCallback {
         &()
     }
+}
+
+fn crc(s: &'static str) -> u32 {
+    kernel::utilities::helpers::crc32_posix(s.as_bytes())
 }
 
 /// This is in a separate, inline(never) function so that its stack frame is
@@ -419,8 +431,8 @@ pub unsafe fn start() -> (
             5 => &nrf52840_peripherals.gpio_port[Pin::P1_06],
             6 => &nrf52840_peripherals.gpio_port[Pin::P1_07],
             7 => &nrf52840_peripherals.gpio_port[Pin::P1_08],
-            8 => &nrf52840_peripherals.gpio_port[Pin::P1_10],
-            9 => &nrf52840_peripherals.gpio_port[Pin::P1_11],
+            // 8 => &nrf52840_peripherals.gpio_port[Pin::P1_10],
+            // 9 => &nrf52840_peripherals.gpio_port[Pin::P1_11],
             10 => &nrf52840_peripherals.gpio_port[Pin::P1_12],
             11 => &nrf52840_peripherals.gpio_port[Pin::P1_13],
             12 => &nrf52840_peripherals.gpio_port[Pin::P1_14],
@@ -810,6 +822,67 @@ pub unsafe fn start() -> (
     base_peripherals.twi1.set_speed(nrf52840::i2c::Speed::K400);
 
     //--------------------------------------------------------------------------
+    // SCREEN
+    //--------------------------------------------------------------------------
+
+    const SCREEN_I2C_SDA_PIN: Pin = Pin::P1_10;
+    const SCREEN_I2C_SCL_PIN: Pin = Pin::P1_11;
+
+    let i2c_bus = components::i2c::I2CMuxComponent::new(&base_peripherals.twi0, None)
+        .finalize(components::i2c_mux_component_static!(nrf52840::i2c::TWI));
+    base_peripherals.twi0.configure(
+        nrf52840::pinmux::Pinmux::new(SCREEN_I2C_SCL_PIN as u32),
+        nrf52840::pinmux::Pinmux::new(SCREEN_I2C_SDA_PIN as u32),
+    );
+    base_peripherals.twi0.set_speed(nrf52840::i2c::Speed::K400);
+
+    // I2C address is b011110X, and on this board D/C̅ is GND.
+    let ssd1306_i2c = components::i2c::I2CComponent::new(i2c_bus, 0x3c)
+        .finalize(components::i2c_component_static!(nrf52840::i2c::TWI));
+
+    // Create the ssd1306 object for the actual screen driver.
+    let ssd1306 = components::ssd1306::Ssd1306Component::new(ssd1306_i2c, true)
+        .finalize(components::ssd1306_component_static!(nrf52840::i2c::TWI));
+
+    // Assign screen regions to specific apps.
+    let apps_regions = static_init!(
+        [capsules_extra::screen_shared::AppScreenRegion; 3],
+        [
+            capsules_extra::screen_shared::AppScreenRegion::new(
+                kernel::process::ShortID::Fixed(core::num::NonZeroU32::new(crc("circle")).unwrap()),
+                0,     // x
+                0,     // y
+                8 * 8, // width
+                8 * 8  // height
+            ),
+            capsules_extra::screen_shared::AppScreenRegion::new(
+                kernel::process::ShortID::Fixed(core::num::NonZeroU32::new(crc("count")).unwrap()),
+                8 * 8, // x
+                0,     // y
+                8 * 8, // width
+                4 * 8  // height
+            ),
+            capsules_extra::screen_shared::AppScreenRegion::new(
+                kernel::process::ShortID::Fixed(
+                    core::num::NonZeroU32::new(crc("tock-scroll")).unwrap()
+                ),
+                8 * 8, // x
+                4 * 8, // y
+                8 * 8, // width
+                4 * 8  // height
+            )
+        ]
+    );
+
+    let screen = components::screen::ScreenSharedComponent::new(
+        board_kernel,
+        capsules_extra::screen::DRIVER_NUM,
+        ssd1306,
+        apps_regions,
+    )
+    .finalize(components::screen_shared_component_static!(1032, Screen));
+
+    //--------------------------------------------------------------------------
     // ANALOG COMPARATOR
     //--------------------------------------------------------------------------
 
@@ -827,6 +900,16 @@ pub unsafe fn start() -> (
     .finalize(components::analog_comparator_component_static!(
         nrf52840::acomp::Comparator
     ));
+
+    //--------------------------------------------------------------------------
+    // APP ID CHECKING
+    //--------------------------------------------------------------------------
+
+    let checker = static_init!(
+        kernel::process_checker::basic::AppCheckerNames<fn(&'static str) -> u32>,
+        kernel::process_checker::basic::AppCheckerNames::new(&(crc as fn(&'static str) -> u32))
+    );
+    kernel::deferred_call::DeferredCallClient::register(checker);
 
     //--------------------------------------------------------------------------
     // NRF CLOCK SETUP
@@ -911,12 +994,16 @@ pub unsafe fn start() -> (
         i2c_master_slave,
         spi_controller,
         kv_driver,
+        screen,
         scheduler,
+        checker,
         systick: cortexm4::systick::SysTick::new_with_calibration(64000000),
     };
 
     let _ = platform.pconsole.start();
     base_peripherals.adc.calibrate();
+
+    ssd1306.init_screen();
 
     debug!("Initialization complete. Entering main loop\r");
     debug!("{}", &nrf52840::ficr::FICR_INSTANCE);
@@ -933,16 +1020,17 @@ pub unsafe fn start() -> (
         static _eappmem: u8;
     }
 
-    kernel::process::load_processes(
+    kernel::process::load_and_check_processes(
         board_kernel,
+        &platform,
         chip,
         core::slice::from_raw_parts(
-            core::ptr::addr_of!(_sapps),
-            core::ptr::addr_of!(_eapps) as usize - core::ptr::addr_of!(_sapps) as usize,
+            &_sapps as *const u8,
+            &_eapps as *const u8 as usize - &_sapps as *const u8 as usize,
         ),
         core::slice::from_raw_parts_mut(
-            core::ptr::addr_of_mut!(_sappmem),
-            core::ptr::addr_of!(_eappmem) as usize - core::ptr::addr_of!(_sappmem) as usize,
+            &mut _sappmem as *mut u8,
+            &_eappmem as *const u8 as usize - &_sappmem as *const u8 as usize,
         ),
         &mut PROCESSES,
         &FAULT_RESPONSE,
