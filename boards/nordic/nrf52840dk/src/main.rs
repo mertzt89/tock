@@ -845,33 +845,45 @@ pub unsafe fn start() -> (
         .finalize(components::ssd1306_component_static!(nrf52840::i2c::TWI));
 
     // Assign screen regions to specific apps.
+    // let apps_regions = static_init!(
+    //     [capsules_extra::screen_shared::AppScreenRegion; 3],
+    //     [
+    //         capsules_extra::screen_shared::AppScreenRegion::new(
+    //             kernel::process::ShortID::Fixed(core::num::NonZeroU32::new(crc("circle")).unwrap()),
+    //             0,     // x
+    //             0,     // y
+    //             8 * 8, // width
+    //             8 * 8  // height
+    //         ),
+    //         capsules_extra::screen_shared::AppScreenRegion::new(
+    //             kernel::process::ShortID::Fixed(core::num::NonZeroU32::new(crc("count")).unwrap()),
+    //             8 * 8, // x
+    //             0,     // y
+    //             8 * 8, // width
+    //             4 * 8  // height
+    //         ),
+    //         capsules_extra::screen_shared::AppScreenRegion::new(
+    //             kernel::process::ShortID::Fixed(
+    //                 core::num::NonZeroU32::new(crc("tock-scroll")).unwrap()
+    //             ),
+    //             8 * 8, // x
+    //             4 * 8, // y
+    //             8 * 8, // width
+    //             4 * 8  // height
+    //         )
+    //     ]
+    // );
+
+    // Assign screen regions to specific apps.
     let apps_regions = static_init!(
-        [capsules_extra::screen_shared::AppScreenRegion; 3],
-        [
-            capsules_extra::screen_shared::AppScreenRegion::new(
-                kernel::process::ShortID::Fixed(core::num::NonZeroU32::new(crc("circle")).unwrap()),
-                0,     // x
-                0,     // y
-                8 * 8, // width
-                8 * 8  // height
-            ),
-            capsules_extra::screen_shared::AppScreenRegion::new(
-                kernel::process::ShortID::Fixed(core::num::NonZeroU32::new(crc("count")).unwrap()),
-                8 * 8, // x
-                0,     // y
-                8 * 8, // width
-                4 * 8  // height
-            ),
-            capsules_extra::screen_shared::AppScreenRegion::new(
-                kernel::process::ShortID::Fixed(
-                    core::num::NonZeroU32::new(crc("tock-scroll")).unwrap()
-                ),
-                8 * 8, // x
-                4 * 8, // y
-                8 * 8, // width
-                4 * 8  // height
-            )
-        ]
+        [capsules_extra::screen_shared::AppScreenRegion; 1],
+        [capsules_extra::screen_shared::AppScreenRegion::new(
+            kernel::process::ShortID::Fixed(core::num::NonZeroU32::new(crc("led-menu")).unwrap()),
+            0,      // x
+            0,      // y
+            16 * 8, // width
+            8 * 8   // height
+        )]
     );
 
     let screen = components::screen::ScreenSharedComponent::new(
