@@ -70,6 +70,7 @@ pub mod rng;
 pub mod sched;
 pub mod screen;
 pub mod segger_rtt;
+pub mod sh1106;
 pub mod sha;
 pub mod sht3x;
 pub mod sht4x;
