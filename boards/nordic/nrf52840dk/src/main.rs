@@ -878,14 +878,25 @@ pub unsafe fn start() -> (
 
     // Assign screen regions to specific apps.
     let apps_regions = static_init!(
-        [capsules_extra::screen_shared::AppScreenRegion; 1],
-        [capsules_extra::screen_shared::AppScreenRegion::new(
-            kernel::process::ShortID::Fixed(core::num::NonZeroU32::new(crc("led-menu")).unwrap()),
-            1 * 8, // x
-            1 * 8, // y
-            8 * 8, // width
-            7 * 8  // height
-        )]
+        [capsules_extra::screen_shared::AppScreenRegion; 2],
+        [
+            capsules_extra::screen_shared::AppScreenRegion::new(
+                kernel::process::ShortID::Fixed(
+                    core::num::NonZeroU32::new(crc("led-menu")).unwrap()
+                ),
+                0 * 8,  // x
+                4 * 8,  // y
+                16 * 8, // width
+                4 * 8   // height
+            ),
+            capsules_extra::screen_shared::AppScreenRegion::new(
+                kernel::process::ShortID::Fixed(core::num::NonZeroU32::new(crc("graph")).unwrap()),
+                0 * 8,  // x
+                0 * 8,  // y
+                16 * 8, // width
+                4 * 8   // height
+            )
+        ]
     );
 
     let screen = components::screen::ScreenSharedComponent::new(
