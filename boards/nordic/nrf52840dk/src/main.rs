@@ -192,7 +192,7 @@ type Ieee802154Driver = components::ieee802154::Ieee802154ComponentType<
     nrf52840::aes::AesECB<'static>,
 >;
 
-type Screen = components::ssd1306::Ssd1306ComponentType<nrf52840::i2c::TWI<'static>>;
+type Screen = components::sh1106::Sh1106ComponentType<nrf52840::i2c::TWI<'static>>;
 type ScreenDriver = components::screen::ScreenSharedComponentType<Screen>;
 
 type Checker = kernel::process_checker::basic::AppCheckerNames<'static, fn(&'static str) -> u32>;
@@ -841,8 +841,10 @@ pub unsafe fn start() -> (
         .finalize(components::i2c_component_static!(nrf52840::i2c::TWI));
 
     // Create the ssd1306 object for the actual screen driver.
-    let ssd1306 = components::ssd1306::Ssd1306Component::new(ssd1306_i2c, true)
-        .finalize(components::ssd1306_component_static!(nrf52840::i2c::TWI));
+    // let ssd1306 = components::ssd1306::Ssd1306Component::new(ssd1306_i2c, true)
+    //     .finalize(components::ssd1306_component_static!(nrf52840::i2c::TWI));
+    let sh1106 = components::sh1106::Sh1106Component::new(ssd1306_i2c, true)
+        .finalize(components::sh1106_component_static!(nrf52840::i2c::TWI));
 
     // Assign screen regions to specific apps.
     // let apps_regions = static_init!(
@@ -879,17 +881,17 @@ pub unsafe fn start() -> (
         [capsules_extra::screen_shared::AppScreenRegion; 1],
         [capsules_extra::screen_shared::AppScreenRegion::new(
             kernel::process::ShortID::Fixed(core::num::NonZeroU32::new(crc("led-menu")).unwrap()),
-            0,      // x
-            0,      // y
-            16 * 8, // width
-            8 * 8   // height
+            1 * 8, // x
+            1 * 8, // y
+            8 * 8, // width
+            7 * 8  // height
         )]
     );
 
     let screen = components::screen::ScreenSharedComponent::new(
         board_kernel,
         capsules_extra::screen::DRIVER_NUM,
-        ssd1306,
+        sh1106,
         apps_regions,
     )
     .finalize(components::screen_shared_component_static!(1032, Screen));
@@ -1015,7 +1017,7 @@ pub unsafe fn start() -> (
     let _ = platform.pconsole.start();
     base_peripherals.adc.calibrate();
 
-    ssd1306.init_screen();
+    sh1106.init_screen();
 
     debug!("Initialization complete. Entering main loop\r");
     debug!("{}", &nrf52840::ficr::FICR_INSTANCE);
