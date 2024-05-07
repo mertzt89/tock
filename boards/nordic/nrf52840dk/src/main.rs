@@ -198,6 +198,10 @@ type Ieee802154Driver = components::ieee802154::Ieee802154ComponentType<
 // EUI64
 type Eui64Driver = components::eui64::Eui64ComponentType;
 
+// USB Keyboard HID - for nRF52840dk
+type UsbHw = nrf52840::usbd::Usbd<'static>; // For any nRF52840 board.
+type KeyboardHidDriver = components::keyboard_hid::KeyboardHidComponentType<UsbHw>;
+
 /// Supported drivers by the platform
 pub struct Platform {
     ble_radio: &'static capsules_extra::ble_advertising_driver::BLE<
@@ -255,6 +259,7 @@ pub struct Platform {
         >,
         32,
     >,
+    keyboard_hid_driver: &'static KeyboardHidDriver,
     oracle: &'static capsules_extra::tutorials::encryption_oracle_chkpt5::EncryptionOracleDriver<
         'static,
         nrf52840::aes::AesECB<'static>,
@@ -262,6 +267,9 @@ pub struct Platform {
     scheduler: &'static RoundRobinSched<'static>,
     systick: cortexm4::systick::SysTick,
 }
+
+// Keyboard HID Driver Num:
+const KEYBOARD_HID_DRIVER_NUM: usize = capsules_core::driver::NUM::KeyboardHid as usize;
 
 impl SyscallDriverLookup for Platform {
     fn with_driver<F, R>(&self, driver_num: usize, f: F) -> R
@@ -288,6 +296,7 @@ impl SyscallDriverLookup for Platform {
             capsules_extra::net::thread::driver::DRIVER_NUM => f(Some(self.thread_driver)),
             capsules_extra::hmac::DRIVER_NUM => f(Some(self.hmac)),
             capsules_extra::kv_driver::DRIVER_NUM => f(Some(self.kv_driver)),
+            KEYBOARD_HID_DRIVER_NUM => f(Some(self.keyboard_hid_driver)),
             0x99999 => f(Some(self.oracle)),
             _ => f(None),
         }
@@ -882,15 +891,15 @@ pub unsafe fn start() -> (
     //--------------------------------------------------------------------------
     // Uncomment to experiment with this.
 
-    // // Create the strings we include in the USB descriptor.
-    // let strings = static_init!(
-    //     [&str; 3],
-    //     [
-    //         "Nordic Semiconductor", // Manufacturer
-    //         "nRF52840dk - TockOS",  // Product
-    //         "serial0001",           // Serial number
-    //     ]
-    // );
+    // Create the strings we include in the USB descriptor.
+    let strings = static_init!(
+        [&str; 3],
+        [
+            "Nordic Semiconductor", // Manufacturer
+            "nRF52840dk - TockOS",  // Product
+            "serial0001",           // Serial number
+        ]
+    );
 
     // CTAP Example
     //
@@ -907,22 +916,22 @@ pub unsafe fn start() -> (
     // ctap.enable();
     // ctap.attach();
 
-    // // Keyboard HID Example
-    // type UsbHw = nrf52840::usbd::Usbd<'static>;
-    // let usb_device = &nrf52840_peripherals.usbd;
+    // Keyboard HID Example
+    type UsbHw = nrf52840::usbd::Usbd<'static>;
+    let usb_device = &nrf52840_peripherals.usbd;
 
-    // let (keyboard_hid, keyboard_hid_driver) = components::keyboard_hid::KeyboardHidComponent::new(
-    //     board_kernel,
-    //     capsules_core::driver::NUM::KeyboardHid as usize,
-    //     usb_device,
-    //     0x1915, // Nordic Semiconductor
-    //     0x503a,
-    //     strings,
-    // )
-    // .finalize(components::keyboard_hid_component_static!(UsbHw));
+    let (keyboard_hid, keyboard_hid_driver) = components::keyboard_hid::KeyboardHidComponent::new(
+        board_kernel,
+        capsules_core::driver::NUM::KeyboardHid as usize,
+        usb_device,
+        0x1915, // Nordic Semiconductor
+        0x503a,
+        strings,
+    )
+    .finalize(components::keyboard_hid_component_static!(UsbHw));
 
-    // keyboard_hid.enable();
-    // keyboard_hid.attach();
+    keyboard_hid.enable();
+    keyboard_hid.attach();
 
     //--------------------------------------------------------------------------
     // AES ORACLE
@@ -986,6 +995,7 @@ pub unsafe fn start() -> (
         hmac,
         oracle,
         kv_driver,
+        keyboard_hid_driver,
         scheduler,
         systick: cortexm4::systick::SysTick::new_with_calibration(64000000),
     };
