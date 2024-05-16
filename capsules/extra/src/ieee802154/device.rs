@@ -16,10 +16,11 @@
 //! procedure in hardware, as opposed to requiring a software implementation.
 
 use crate::ieee802154::framer::Frame;
+use crate::ieee802154::mac;
 use crate::net::ieee802154::{Header, KeyId, MacAddress, PanID, SecurityLevel};
 use kernel::ErrorCode;
 
-pub trait MacDevice<'a> {
+pub trait MacDevice<'a>: mac::RadioControl<'a> {
     /// Sets the transmission client of this MAC device
     fn set_transmit_client(&self, client: &'a dyn TxClient);
     /// Sets the receive client of this MAC device
@@ -29,29 +30,6 @@ pub trait MacDevice<'a> {
         &self,
         client: &'a dyn SecuredFrameNoDecryptRxClient,
     );
-
-    /// The short 16-bit address of the MAC device
-    fn get_address(&self) -> u16;
-    /// The long 64-bit address (EUI-64) of the MAC device
-    fn get_address_long(&self) -> [u8; 8];
-    /// The 16-bit PAN ID of the MAC device
-    fn get_pan(&self) -> u16;
-
-    /// Set the short 16-bit address of the MAC device
-    fn set_address(&self, addr: u16);
-    /// Set the long 64-bit address (EUI-64) of the MAC device
-    fn set_address_long(&self, addr: [u8; 8]);
-    /// Set the 16-bit PAN ID of the MAC device
-    fn set_pan(&self, id: u16);
-
-    /// This method must be called after one or more calls to `set_*`. If
-    /// `set_*` is called without calling `config_commit`, there is no guarantee
-    /// that the underlying hardware configuration (addresses, pan ID) is in
-    /// line with this MAC device implementation.
-    fn config_commit(&self);
-
-    /// Returns if the MAC device is currently on.
-    fn is_on(&self) -> bool;
 
     /// Prepares a mutable buffer slice as an 802.15.4 frame by writing the appropriate
     /// header bytes into the buffer. This needs to be done before adding the

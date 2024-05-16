@@ -32,7 +32,7 @@
 //! mux_mac.add_user(virtual_mac);
 //! ```
 
-use crate::ieee802154::{device, framer};
+use crate::ieee802154::{device, framer, mac};
 use crate::net::ieee802154::{Header, KeyId, MacAddress, PanID, SecurityLevel};
 
 use kernel::collections::list::{List, ListLink, ListNode};
@@ -276,22 +276,7 @@ impl<'a, M: device::MacDevice<'a>> ListNode<'a, MacUser<'a, M>> for MacUser<'a, 
     }
 }
 
-impl<'a, M: device::MacDevice<'a>> device::MacDevice<'a> for MacUser<'a, M> {
-    fn set_transmit_client(&self, client: &'a dyn device::TxClient) {
-        self.tx_client.set(client);
-    }
-
-    fn set_receive_client(&self, client: &'a dyn device::RxClient) {
-        self.rx_client.set(client);
-    }
-
-    fn set_receive_secured_frame_no_decrypt_client(
-        &self,
-        client: &'a dyn device::SecuredFrameNoDecryptRxClient,
-    ) {
-        self.secure_frame_no_decrypt_rx_client.set(client);
-    }
-
+impl<'a, M: device::MacDevice<'a>> mac::RadioControl<'a> for MacUser<'a, M> {
     fn get_address(&self) -> u16 {
         self.mux.mac.get_address()
     }
@@ -322,6 +307,23 @@ impl<'a, M: device::MacDevice<'a>> device::MacDevice<'a> for MacUser<'a, M> {
 
     fn is_on(&self) -> bool {
         self.mux.mac.is_on()
+    }
+}
+
+impl<'a, M: device::MacDevice<'a>> device::MacDevice<'a> for MacUser<'a, M> {
+    fn set_transmit_client(&self, client: &'a dyn device::TxClient) {
+        self.tx_client.set(client);
+    }
+
+    fn set_receive_client(&self, client: &'a dyn device::RxClient) {
+        self.rx_client.set(client);
+    }
+
+    fn set_receive_secured_frame_no_decrypt_client(
+        &self,
+        client: &'a dyn device::SecuredFrameNoDecryptRxClient,
+    ) {
+        self.secure_frame_no_decrypt_rx_client.set(client);
     }
 
     fn prepare_data_frame(

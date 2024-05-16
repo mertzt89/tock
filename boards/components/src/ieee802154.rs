@@ -35,7 +35,7 @@
 
 use capsules_core::virtualizers::virtual_aes_ccm::MuxAES128CCM;
 use capsules_extra::ieee802154::device::MacDevice;
-use capsules_extra::ieee802154::mac::{AwakeMac, Mac};
+use capsules_extra::ieee802154::mac::{AwakeMac, Mac, RadioControl};
 use core::mem::MaybeUninit;
 use kernel::capabilities;
 use kernel::component::Component;

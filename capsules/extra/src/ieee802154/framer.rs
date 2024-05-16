@@ -76,7 +76,7 @@
 //
 
 use crate::ieee802154::device::{MacDevice, RxClient, SecuredFrameNoDecryptRxClient, TxClient};
-use crate::ieee802154::mac::Mac;
+use crate::ieee802154::mac::{self, Mac};
 use crate::net::ieee802154::{
     FrameType, FrameVersion, Header, KeyId, MacAddress, PanID, Security, SecurityLevel,
 };
@@ -798,22 +798,7 @@ impl<'a, M: Mac<'a>, A: AES128CCM<'a>> Framer<'a, M, A> {
     }
 }
 
-impl<'a, M: Mac<'a>, A: AES128CCM<'a>> MacDevice<'a> for Framer<'a, M, A> {
-    fn set_transmit_client(&self, client: &'a dyn TxClient) {
-        self.tx_client.set(client);
-    }
-
-    fn set_receive_client(&self, client: &'a dyn RxClient) {
-        self.rx_client.set(client);
-    }
-
-    fn set_receive_secured_frame_no_decrypt_client(
-        &self,
-        client: &'a dyn super::device::SecuredFrameNoDecryptRxClient,
-    ) {
-        self.secured_frame_no_decrypt_rx_client.set(client);
-    }
-
+impl<'a, M: Mac<'a>, A: AES128CCM<'a>> mac::RadioControl<'a> for Framer<'a, M, A> {
     fn get_address(&self) -> u16 {
         self.mac.get_address()
     }
@@ -844,6 +829,23 @@ impl<'a, M: Mac<'a>, A: AES128CCM<'a>> MacDevice<'a> for Framer<'a, M, A> {
 
     fn is_on(&self) -> bool {
         self.mac.is_on()
+    }
+}
+
+impl<'a, M: Mac<'a>, A: AES128CCM<'a>> MacDevice<'a> for Framer<'a, M, A> {
+    fn set_transmit_client(&self, client: &'a dyn TxClient) {
+        self.tx_client.set(client);
+    }
+
+    fn set_receive_client(&self, client: &'a dyn RxClient) {
+        self.rx_client.set(client);
+    }
+
+    fn set_receive_secured_frame_no_decrypt_client(
+        &self,
+        client: &'a dyn super::device::SecuredFrameNoDecryptRxClient,
+    ) {
+        self.secured_frame_no_decrypt_rx_client.set(client);
     }
 
     fn prepare_data_frame(
