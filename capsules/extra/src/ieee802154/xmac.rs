@@ -402,7 +402,9 @@ impl<'a, R: radio::Radio<'a>, A: Alarm<'a>> Mac<'a> for XMac<'a, R, A> {
     fn set_config_client(&self, client: &'a dyn radio::ConfigClient) {
         self.radio.set_config_client(client)
     }
+}
 
+impl<'a, R: radio::Radio<'a>, A: Alarm<'a>> kernel::hil::radio::RadioData<'a> for XMac<'a, R, A> {
     fn set_transmit_client(&self, client: &'a dyn radio::TxClient) {
         self.tx_client.set(client);
     }

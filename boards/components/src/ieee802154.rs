@@ -40,7 +40,7 @@ use core::mem::MaybeUninit;
 use kernel::capabilities;
 use kernel::component::Component;
 use kernel::create_capability;
-use kernel::hil::radio::{self, MAX_BUF_SIZE};
+use kernel::hil::radio::{self, MAX_BUF_SIZE, RadioData};
 use kernel::hil::symmetric_encryption::{self, AES128Ctr, AES128, AES128CBC, AES128CCM, AES128ECB};
 
 // This buffer is used as an intermediate buffer for AES CCM encryption. An

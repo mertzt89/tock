@@ -44,26 +44,12 @@ pub trait RadioControl<'a> {
     fn is_on(&self) -> bool;
 }
 
-pub trait Mac<'a>: RadioControl<'a> {
+pub trait Mac<'a>: RadioControl<'a> + kernel::hil::radio::RadioData<'a> {
     /// Initializes the layer.
     fn initialize(&self) -> Result<(), ErrorCode>;
 
     /// Sets the notified client for configuration changes
     fn set_config_client(&self, client: &'a dyn radio::ConfigClient);
-    /// Sets the notified client for transmission completions
-    fn set_transmit_client(&self, client: &'a dyn radio::TxClient);
-    /// Sets the notified client for frame receptions
-    fn set_receive_client(&self, client: &'a dyn radio::RxClient);
-    /// Sets the buffer for packet reception
-    fn set_receive_buffer(&self, buffer: &'static mut [u8]);
-
-    /// Transmits complete MAC frames, which must be prepared by an ieee802154::device::MacDevice
-    /// before being passed to the Mac layer. Returns the frame buffer in case of an error.
-    fn transmit(
-        &self,
-        full_mac_frame: &'static mut [u8],
-        frame_len: usize,
-    ) -> Result<(), (ErrorCode, &'static mut [u8])>;
 }
 
 ///
@@ -131,7 +117,9 @@ impl<'a, R: radio::Radio<'a>> Mac<'a> for AwakeMac<'a, R> {
     fn set_config_client(&self, client: &'a dyn radio::ConfigClient) {
         self.radio.set_config_client(client)
     }
+}
 
+impl<'a, R: radio::Radio<'a>> kernel::hil::radio::RadioData<'a> for AwakeMac<'a, R> {
     fn set_transmit_client(&self, client: &'a dyn radio::TxClient) {
         self.tx_client.set(client);
     }
