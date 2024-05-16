@@ -18,19 +18,7 @@ use kernel::hil::radio::{self, MAX_FRAME_SIZE, PSDU_OFFSET};
 use kernel::utilities::cells::OptionalCell;
 use kernel::ErrorCode;
 
-pub trait Mac<'a> {
-    /// Initializes the layer.
-    fn initialize(&self) -> Result<(), ErrorCode>;
-
-    /// Sets the notified client for configuration changes
-    fn set_config_client(&self, client: &'a dyn radio::ConfigClient);
-    /// Sets the notified client for transmission completions
-    fn set_transmit_client(&self, client: &'a dyn radio::TxClient);
-    /// Sets the notified client for frame receptions
-    fn set_receive_client(&self, client: &'a dyn radio::RxClient);
-    /// Sets the buffer for packet reception
-    fn set_receive_buffer(&self, buffer: &'static mut [u8]);
-
+pub trait RadioControl<'a> {
     /// The short 16-bit address of the radio
     fn get_address(&self) -> u16;
     /// The long 64-bit address of the radio
@@ -54,6 +42,20 @@ pub trait Mac<'a> {
 
     /// Indicates whether or not the MAC protocol is active and can send frames
     fn is_on(&self) -> bool;
+}
+
+pub trait Mac<'a>: RadioControl<'a> {
+    /// Initializes the layer.
+    fn initialize(&self) -> Result<(), ErrorCode>;
+
+    /// Sets the notified client for configuration changes
+    fn set_config_client(&self, client: &'a dyn radio::ConfigClient);
+    /// Sets the notified client for transmission completions
+    fn set_transmit_client(&self, client: &'a dyn radio::TxClient);
+    /// Sets the notified client for frame receptions
+    fn set_receive_client(&self, client: &'a dyn radio::RxClient);
+    /// Sets the buffer for packet reception
+    fn set_receive_buffer(&self, buffer: &'static mut [u8]);
 
     /// Transmits complete MAC frames, which must be prepared by an ieee802154::device::MacDevice
     /// before being passed to the Mac layer. Returns the frame buffer in case of an error.
@@ -86,18 +88,9 @@ impl<'a, R: radio::Radio<'a>> AwakeMac<'a, R> {
     }
 }
 
-impl<'a, R: radio::Radio<'a>> Mac<'a> for AwakeMac<'a, R> {
-    fn initialize(&self) -> Result<(), ErrorCode> {
-        // do nothing, extra buffer unnecessary
-        Ok(())
-    }
-
+impl<'a, R: radio::Radio<'a>> RadioControl<'a> for AwakeMac<'a, R> {
     fn is_on(&self) -> bool {
         self.radio.is_on()
-    }
-
-    fn set_config_client(&self, client: &'a dyn radio::ConfigClient) {
-        self.radio.set_config_client(client)
     }
 
     fn set_address(&self, addr: u16) {
@@ -126,6 +119,17 @@ impl<'a, R: radio::Radio<'a>> Mac<'a> for AwakeMac<'a, R> {
 
     fn config_commit(&self) {
         self.radio.config_commit()
+    }
+}
+
+impl<'a, R: radio::Radio<'a>> Mac<'a> for AwakeMac<'a, R> {
+    fn initialize(&self) -> Result<(), ErrorCode> {
+        // do nothing, extra buffer unnecessary
+        Ok(())
+    }
+
+    fn set_config_client(&self, client: &'a dyn radio::ConfigClient) {
+        self.radio.set_config_client(client)
     }
 
     fn set_transmit_client(&self, client: &'a dyn radio::TxClient) {

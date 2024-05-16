@@ -34,6 +34,7 @@
 
 use capsules_core::virtualizers::virtual_alarm::{MuxAlarm, VirtualMuxAlarm};
 use capsules_extra::ieee802154::device::{MacDevice, TxClient};
+use capsules_extra::ieee802154::mac::RadioControl;
 use capsules_extra::net::ieee802154::MacAddress;
 use capsules_extra::net::ipv6::ip_utils::{ip6_nh, IPAddr};
 use capsules_extra::net::ipv6::{IP6Header, IP6Packet, IPPayload, TransportHeader};

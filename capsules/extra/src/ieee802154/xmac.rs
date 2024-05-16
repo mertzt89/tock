@@ -82,7 +82,7 @@
 // Date: Nov 21 2017
 //
 
-use crate::ieee802154::mac::Mac;
+use crate::ieee802154::mac::{Mac, RadioControl};
 use crate::net::ieee802154::{FrameType, FrameVersion, Header, MacAddress, PanID};
 use core::cell::Cell;
 use kernel::hil::radio;
@@ -354,12 +354,7 @@ impl<'a, R: radio::Radio<'a>, A: Alarm<'a>> rng::Client for XMac<'a, R, A> {
 }
 
 // The vast majority of these calls pass through to the underlying radio driver.
-impl<'a, R: radio::Radio<'a>, A: Alarm<'a>> Mac<'a> for XMac<'a, R, A> {
-    fn initialize(&self) -> Result<(), ErrorCode> {
-        self.state.set(XMacState::STARTUP);
-        Ok(())
-    }
-
+impl<'a, R: radio::Radio<'a>, A: Alarm<'a>> RadioControl<'a> for XMac<'a, R, A> {
     // Always lie and say the radio is on when sleeping, as XMAC will wake up
     // itself to send preambles if necessary.
     fn is_on(&self) -> bool {
@@ -367,10 +362,6 @@ impl<'a, R: radio::Radio<'a>, A: Alarm<'a>> Mac<'a> for XMac<'a, R, A> {
             return true;
         }
         self.radio.is_on()
-    }
-
-    fn set_config_client(&self, client: &'a dyn radio::ConfigClient) {
-        self.radio.set_config_client(client)
     }
 
     fn set_address(&self, addr: u16) {
@@ -399,6 +390,17 @@ impl<'a, R: radio::Radio<'a>, A: Alarm<'a>> Mac<'a> for XMac<'a, R, A> {
 
     fn config_commit(&self) {
         self.radio.config_commit()
+    }
+}
+
+impl<'a, R: radio::Radio<'a>, A: Alarm<'a>> Mac<'a> for XMac<'a, R, A> {
+    fn initialize(&self) -> Result<(), ErrorCode> {
+        self.state.set(XMacState::STARTUP);
+        Ok(())
+    }
+
+    fn set_config_client(&self, client: &'a dyn radio::ConfigClient) {
+        self.radio.set_config_client(client)
     }
 
     fn set_transmit_client(&self, client: &'a dyn radio::TxClient) {
