@@ -211,16 +211,12 @@
 #![deny(unsafe_code)]
 #![deny(missing_docs)]
 
-pub mod async_ops;
 pub mod crc32;
 pub mod error_codes;
 pub mod flash_controller;
 pub mod success_codes;
 pub mod tickv;
 
-// Use this to generate nicer docs
-#[doc(inline)]
-pub use crate::async_ops::AsyncTicKV;
 #[doc(inline)]
 pub use crate::error_codes::ErrorCode;
 #[doc(inline)]

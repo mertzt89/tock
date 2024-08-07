@@ -128,13 +128,13 @@ impl<'a, C: FlashController<S>, const S: usize> TicKV<'a, C, S> {
     ///
     /// On success nothing will be returned.
     /// On error a `ErrorCode` will be returned.
-    pub fn initialise(&self, hashed_main_key: u64) -> Result<SuccessCode, ErrorCode> {
+    pub async fn initialise(&self, hashed_main_key: u64) -> Result<SuccessCode, ErrorCode> {
         let mut buf: [u8; 0] = [0; 0];
 
         let key_ret = match self.state.get() {
-            State::None => self.get_key(hashed_main_key, &mut buf),
+            State::None => self.get_key(hashed_main_key, &mut buf).await,
             State::Init(state) => match state {
-                InitState::GetKeyReadRegion(_) => self.get_key(hashed_main_key, &mut buf),
+                InitState::GetKeyReadRegion(_) => self.get_key(hashed_main_key, &mut buf).await,
                 _ => Err(ErrorCode::EraseNotReady(0)),
             },
             _ => unreachable!(),
@@ -163,7 +163,7 @@ impl<'a, C: FlashController<S>, const S: usize> TicKV<'a, C, S> {
 
                                 if start < (self.flash_size / S) {
                                     for r in start..(self.flash_size / S) {
-                                        match self.controller.erase_region(r) {
+                                        match self.controller.erase_region(r).await {
                                             Ok(()) => {}
                                             Err(e) => {
                                                 self.state
@@ -180,7 +180,7 @@ impl<'a, C: FlashController<S>, const S: usize> TicKV<'a, C, S> {
                         }
 
                         // Save the main key
-                        match self.append_key(hashed_main_key, &buf) {
+                        match self.append_key(hashed_main_key, &buf).await {
                             Ok(ret) => {
                                 self.state.set(State::None);
                                 Ok(ret)
@@ -390,7 +390,7 @@ impl<'a, C: FlashController<S>, const S: usize> TicKV<'a, C, S> {
     ///
     /// On success nothing will be returned.
     /// On error a `ErrorCode` will be returned.
-    pub fn append_key(&self, hash: u64, value: &[u8]) -> Result<SuccessCode, ErrorCode> {
+    pub async fn append_key(&self, hash: u64, value: &[u8]) -> Result<SuccessCode, ErrorCode> {
         let region = self.get_region(hash);
         let check_sum = crc32::Crc32::new();
 
@@ -429,7 +429,7 @@ impl<'a, C: FlashController<S>, const S: usize> TicKV<'a, C, S> {
             if self.state.get() != State::AppendKey(KeyState::ReadRegion(new_region))
                 && self.state.get() != State::Init(InitState::AppendKeyReadRegion(new_region))
             {
-                match self.controller.read_region(new_region, region_data) {
+                match self.controller.read_region(new_region, region_data).await {
                     Ok(()) => {}
                     Err(e) => {
                         self.read_buffer.replace(Some(region_data));
@@ -635,12 +635,16 @@ impl<'a, C: FlashController<S>, const S: usize> TicKV<'a, C, S> {
                 slice.copy_from_slice(&check_sum.to_ne_bytes());
 
                 // Write the data back to the region
-                if let Err(e) = self.controller.write(
-                    S * new_region + offset,
-                    region_data
-                        .get(offset..(offset + package_length + CHECK_SUM_LEN))
-                        .ok_or(ErrorCode::ObjectTooLarge)?,
-                ) {
+                if let Err(e) = self
+                    .controller
+                    .write(
+                        S * new_region + offset,
+                        region_data
+                            .get(offset..(offset + package_length + CHECK_SUM_LEN))
+                            .ok_or(ErrorCode::ObjectTooLarge)?,
+                    )
+                    .await
+                {
                     self.read_buffer.replace(Some(region_data));
                     match e {
                         ErrorCode::WriteNotReady(_) => return Ok(SuccessCode::Queued),
@@ -664,7 +668,11 @@ impl<'a, C: FlashController<S>, const S: usize> TicKV<'a, C, S> {
     ///
     /// If a power loss occurs before success is returned the data is assumed to
     /// be lost.
-    pub fn get_key(&self, hash: u64, buf: &mut [u8]) -> Result<(SuccessCode, usize), ErrorCode> {
+    pub async fn get_key(
+        &self,
+        hash: u64,
+        buf: &mut [u8],
+    ) -> Result<(SuccessCode, usize), ErrorCode> {
         let region = self.get_region(hash);
 
         let mut region_offset: isize = 0;
@@ -693,7 +701,7 @@ impl<'a, C: FlashController<S>, const S: usize> TicKV<'a, C, S> {
             if self.state.get() != State::GetKey(KeyState::ReadRegion(new_region))
                 && self.state.get() != State::Init(InitState::GetKeyReadRegion(new_region))
             {
-                match self.controller.read_region(new_region, region_data) {
+                match self.controller.read_region(new_region, region_data).await {
                     Ok(()) => {}
                     Err(e) => {
                         self.read_buffer.replace(Some(region_data));
@@ -800,7 +808,7 @@ impl<'a, C: FlashController<S>, const S: usize> TicKV<'a, C, S> {
     ///
     /// If a power loss occurs before success is returned the data is
     /// assumed to be lost.
-    pub fn invalidate_key(&self, hash: u64) -> Result<SuccessCode, ErrorCode> {
+    pub async fn invalidate_key(&self, hash: u64) -> Result<SuccessCode, ErrorCode> {
         let region = self.get_region(hash);
 
         let mut region_offset: isize = 0;
@@ -818,7 +826,7 @@ impl<'a, C: FlashController<S>, const S: usize> TicKV<'a, C, S> {
             // Get the data from that region
             let region_data = self.read_buffer.take().unwrap();
             if self.state.get() != State::InvalidateKey(KeyState::ReadRegion(new_region)) {
-                match self.controller.read_region(new_region, region_data) {
+                match self.controller.read_region(new_region, region_data).await {
                     Ok(()) => {}
                     Err(e) => {
                         self.read_buffer.replace(Some(region_data));
@@ -838,12 +846,16 @@ impl<'a, C: FlashController<S>, const S: usize> TicKV<'a, C, S> {
                         .get_mut(offset + LEN_OFFSET)
                         .ok_or(ErrorCode::CorruptData)? &= !0x80;
 
-                    if let Err(e) = self.controller.write(
-                        S * new_region + offset + LEN_OFFSET,
-                        region_data
-                            .get(offset + LEN_OFFSET..offset + LEN_OFFSET + 1)
-                            .ok_or(ErrorCode::ObjectTooLarge)?,
-                    ) {
+                    if let Err(e) = self
+                        .controller
+                        .write(
+                            S * new_region + offset + LEN_OFFSET,
+                            region_data
+                                .get(offset + LEN_OFFSET..offset + LEN_OFFSET + 1)
+                                .ok_or(ErrorCode::ObjectTooLarge)?,
+                        )
+                        .await
+                    {
                         self.read_buffer.replace(Some(region_data));
                         match e {
                             ErrorCode::WriteNotReady(_) => return Ok(SuccessCode::Queued),
@@ -899,7 +911,7 @@ impl<'a, C: FlashController<S>, const S: usize> TicKV<'a, C, S> {
     ///
     /// If a power loss occurs before success is returned the data is
     /// assumed to be lost.
-    pub fn zeroise_key(&self, hash: u64) -> Result<SuccessCode, ErrorCode> {
+    pub async fn zeroise_key(&self, hash: u64) -> Result<SuccessCode, ErrorCode> {
         let region = self.get_region(hash);
 
         let mut region_offset: isize = 0;
@@ -917,7 +929,7 @@ impl<'a, C: FlashController<S>, const S: usize> TicKV<'a, C, S> {
             // Get the data from that region
             let region_data = self.read_buffer.take().unwrap();
             if self.state.get() != State::ZeroiseKey(KeyState::ReadRegion(new_region)) {
-                match self.controller.read_region(new_region, region_data) {
+                match self.controller.read_region(new_region, region_data).await {
                     Ok(()) => {}
                     Err(e) => {
                         self.read_buffer.replace(Some(region_data));
@@ -945,12 +957,16 @@ impl<'a, C: FlashController<S>, const S: usize> TicKV<'a, C, S> {
 
                     let write_len = data_len as usize;
 
-                    if let Err(e) = self.controller.write(
-                        S * new_region + offset,
-                        region_data
-                            .get(offset..offset + write_len)
-                            .ok_or(ErrorCode::ObjectTooLarge)?,
-                    ) {
+                    if let Err(e) = self
+                        .controller
+                        .write(
+                            S * new_region + offset,
+                            region_data
+                                .get(offset..offset + write_len)
+                                .ok_or(ErrorCode::ObjectTooLarge)?,
+                        )
+                        .await
+                    {
                         self.read_buffer.replace(Some(region_data));
                         match e {
                             ErrorCode::WriteNotReady(_) => return Ok(SuccessCode::Queued),
@@ -983,7 +999,7 @@ impl<'a, C: FlashController<S>, const S: usize> TicKV<'a, C, S> {
         }
     }
 
-    fn garbage_collect_region(
+    async fn garbage_collect_region(
         &self,
         region: usize,
         flash_freed: usize,
@@ -992,7 +1008,7 @@ impl<'a, C: FlashController<S>, const S: usize> TicKV<'a, C, S> {
         let region_data = self.read_buffer.take().unwrap();
         if self.state.get() != State::GarbageCollect(RubbishState::ReadRegion(region, flash_freed))
         {
-            match self.controller.read_region(region, region_data) {
+            match self.controller.read_region(region, region_data).await {
                 Ok(()) => {}
                 Err(e) => {
                     self.read_buffer.replace(Some(region_data));
@@ -1083,7 +1099,7 @@ impl<'a, C: FlashController<S>, const S: usize> TicKV<'a, C, S> {
 
         // If we got down here, the region is ready to be erased.
 
-        if let Err(e) = self.controller.erase_region(region) {
+        if let Err(e) = self.controller.erase_region(region).await {
             if let ErrorCode::EraseNotReady(reg) = e {
                 self.state
                     .set(State::GarbageCollect(RubbishState::EraseRegion(
@@ -1101,7 +1117,7 @@ impl<'a, C: FlashController<S>, const S: usize> TicKV<'a, C, S> {
     ///
     /// On success the number of bytes freed will be returned.
     /// On error a `ErrorCode` will be returned.
-    pub fn garbage_collect(&self) -> Result<usize, ErrorCode> {
+    pub async fn garbage_collect(&self) -> Result<usize, ErrorCode> {
         let num_region = self.flash_size / S;
         let mut flash_freed = 0;
         let start = match self.state.get() {
@@ -1121,7 +1137,7 @@ impl<'a, C: FlashController<S>, const S: usize> TicKV<'a, C, S> {
         };
 
         for i in start..num_region {
-            match self.garbage_collect_region(i, flash_freed) {
+            match self.garbage_collect_region(i, flash_freed).await {
                 Ok(freed) => flash_freed += freed,
                 Err(e) => return Err(e),
             }

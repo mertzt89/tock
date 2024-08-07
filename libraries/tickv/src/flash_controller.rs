@@ -4,6 +4,8 @@
 
 //! The Flash Controller interface with hardware
 
+use core::future::Future;
+
 use crate::error_codes::ErrorCode;
 
 /// Implementation required for the flash controller hardware. This
@@ -40,15 +42,15 @@ use crate::error_codes::ErrorCode;
 /// }
 ///
 /// impl FlashController<1024> for FlashCtrl {
-///     fn read_region(&self, region_number: usize, buf: &mut [u8; 1024]) -> Result<(), ErrorCode> {
+///     async fn read_region(&self, region_number: usize, buf: &mut [u8; 1024]) -> Result<(), ErrorCode> {
 ///         unimplemented!()
 ///     }
 ///
-///     fn write(&self, address: usize, buf: &[u8]) -> Result<(), ErrorCode> {
+///     async fn write(&self, address: usize, buf: &[u8]) -> Result<(), ErrorCode> {
 ///         unimplemented!()
 ///     }
 ///
-///     fn erase_region(&self, region_number: usize) -> Result<(), ErrorCode> {
+///     async fn erase_region(&self, region_number: usize) -> Result<(), ErrorCode> {
 ///         unimplemented!()
 ///     }
 /// }
@@ -70,7 +72,11 @@ pub trait FlashController<const S: usize> {
     /// `read_region()` has returned `ErrorCode::ReadNotReady(region_number)`
     /// the `read_region()` function will be called again and this time should
     /// return the data.
-    fn read_region(&self, region_number: usize, buf: &mut [u8; S]) -> Result<(), ErrorCode>;
+    fn read_region(
+        &self,
+        region_number: usize,
+        buf: &mut [u8; S],
+    ) -> impl Future<Output = Result<(), ErrorCode>>;
 
     /// This function must write the length of `buf` to the specified address
     /// in flash.
@@ -87,7 +93,7 @@ pub trait FlashController<const S: usize> {
     /// `read_region()` can indicate that the operation should be retried in
     /// the future. Note that that region will not be written
     /// again so the write must occur otherwise the operation fails.
-    fn write(&self, address: usize, buf: &[u8]) -> Result<(), ErrorCode>;
+    fn write(&self, address: usize, buf: &[u8]) -> impl Future<Output = Result<(), ErrorCode>>;
 
     /// This function must erase the region specified by `region_number`.
     ///
@@ -97,5 +103,5 @@ pub trait FlashController<const S: usize> {
     /// If the erase is going to happen asynchronously then this should return
     /// `EraseNotReady(region_number)`. Note that that region will not be erased
     /// again so the erasure must occur otherwise the operation fails.
-    fn erase_region(&self, region_number: usize) -> Result<(), ErrorCode>;
+    fn erase_region(&self, region_number: usize) -> impl Future<Output = Result<(), ErrorCode>>;
 }
